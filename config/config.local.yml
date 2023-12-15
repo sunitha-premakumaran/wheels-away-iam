@@ -1,0 +1,10 @@
+DATABASE_SERVER: "localhost"
+DATABASE_PORT: "5432"
+DATABASE_NAME: "wheels_away_iam"
+DATABASE_USER: "postgres"
+DATABASE_PASSWORD: "root"
+DATABASE_LOG_LEVEL: "info"
+DATABASE_SSL_MODE: "prefer"
+API_PORT: 7000
+ENV: "development"
+LOG_LEVEL: "debug"

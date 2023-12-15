@@ -1,0 +1,57 @@
+type UserUpsertResponse {
+  success: Boolean!
+  errorMessage: String
+}
+
+enum UserStatus {
+  ACTIVE
+  IN_ACTIVE
+}
+
+input UserInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  phone: String!
+  userRoles: [String]!
+}
+
+input RoleInput {
+  name: String!
+}
+
+type User {
+  userID: String!
+  authUserID: String!
+  firstName: String!
+  lastName: String!
+  email: String!
+  phone: String!
+  status: UserStatus!
+  userRoles: [String]!
+}
+
+type RoleUpsertResponse {
+  success: Boolean!
+  errorMessage: String
+}
+
+type Role {
+  roleName: String!
+  roleDescription: String!
+  rolePK: String!
+  scopes: [String!]!
+}
+
+type Query {
+  getRoles: [Role!]!
+  getUsers: [User!]!
+}
+
+type Mutation {
+  createUser(user: UserInput): UserUpsertResponse
+  createRole(role: RoleInput): RoleUpsertResponse
+  modifyUser(deleteFlag: Boolean!, user: UserInput): UserUpsertResponse
+  modifyRole(role: RoleInput): RoleUpsertResponse
+  onUserLogin(user: UserInput): User
+}
