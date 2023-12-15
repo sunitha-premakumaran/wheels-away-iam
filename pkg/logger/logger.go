@@ -19,7 +19,7 @@ var (
 	}
 )
 
-func Init(app string, config *config.Config) *zerolog.Logger {
+func NewLogger(app string, config *config.Config) *zerolog.Logger {
 	level, ok := errorLevelMap[config.LogLevel]
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.TimestampFieldName = "timestamp"
