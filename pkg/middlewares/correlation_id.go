@@ -21,7 +21,7 @@ func (h *Middleware) Handle(next Handler) Handler {
 		r = r.WithContext(ctx)
 
 		h.logger.UpdateContext(func(c zerolog.Context) zerolog.Context {
-			return c.Str(string(context_keys.CorrelationID), correlationID)
+			return c.Interface(string(context_keys.CorrelationID), correlationID)
 		})
 
 		r = r.WithContext(h.logger.WithContext(r.Context()))

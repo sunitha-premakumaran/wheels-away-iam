@@ -32,7 +32,7 @@ func main() {
 	configName := fmt.Sprintf("config.%s", env)
 	config := config.Init(configName)
 
-	logger := logger.NewLogger("wheels-away-iam", config)
+	logger := logger.NewLogger(config)
 	gc := gorm.NewDBClient(&config.Database, logger)
 
 	userRepo := repository.NewUserRepository(gc.DB)

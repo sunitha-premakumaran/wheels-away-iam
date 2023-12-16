@@ -17,7 +17,7 @@ linters-settings:
   misspell:
     locale: UK
   lll:
-    line-length: 140
+    line-length: 100
   gofmt:
     simplify: false
   gocritic:

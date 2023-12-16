@@ -10,7 +10,7 @@ import (
 
 type Role struct {
 	UUID          string         `gorm:"column:id;primaryKey"`
-	Description   string         `gorm:"column:description"`
+	Description   *string        `gorm:"column:description"`
 	Name          string         `gorm:"column:name"`
 	Scopes        pq.StringArray `gorm:"column:scopes"`
 	AuthID        string         `gorm:"column:auth_id"`

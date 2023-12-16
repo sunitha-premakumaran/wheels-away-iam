@@ -1,9 +1,10 @@
 package logger
 
 import (
-	"bytes"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -21,21 +22,29 @@ var (
 	}
 )
 
-func NewLogger(app string, config *config.Config) *zerolog.Logger {
+func NewLogger(config *config.Config) *zerolog.Logger {
 	level, ok := errorLevelMap[config.LogLevel]
 	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339, NoColor: true}
-	output.FormatExtra = func(m map[string]interface{}, b *bytes.Buffer) error {
-		// keys := make([]string, 0, len(m))
-		// for k := range m {
-		// 	keys = append(keys, k)
-		// }
-		return nil
+	output.FormatCaller = func(i interface{}) string {
+		return fmt.Sprintf("caller:%s | ", i)
 	}
-	zerolog.TimestampFieldName = "timestamp"
+	output.FormatLevel = func(i interface{}) string {
+		return strings.ToUpper(fmt.Sprintf("| %-6s|", i))
+	}
+	output.FormatMessage = func(i interface{}) string {
+		return fmt.Sprintf("message: %s", i)
+	}
+	output.FormatFieldName = func(i interface{}) string {
+		return fmt.Sprintf("| %s: ", i)
+	}
+	output.FormatFieldValue = func(i interface{}) string {
+		return fmt.Sprintf("%s |", i)
+	}
+
 	if !ok {
 		log.Panicf("%s loglevel is invalid", config.LogLevel)
 	}
-	logger := zerolog.New(output).Level(level).With().Str("app", app).Logger()
+	logger := zerolog.New(output).Level(level).With().Logger()
 	logger = logger.With().Caller().Logger()
 	logger = logger.With().Timestamp().Logger()
 	return &logger
