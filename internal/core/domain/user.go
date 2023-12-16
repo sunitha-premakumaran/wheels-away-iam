@@ -6,9 +6,6 @@ import (
 	"github.com/sunitha/wheels-away-iam/internal/core/enums"
 )
 
-type UserMetadata interface {
-}
-
 type User struct {
 	UUID          string
 	FirstName     string
@@ -19,7 +16,7 @@ type User struct {
 	Description   string
 	Status        enums.UserStatus
 	AuthID        string
-	Metadata      UserMetadata
+	Metadata      interface{}
 	CreatedBy     string
 	CreatedAt     time.Time
 	LastUpdatedAt *time.Time

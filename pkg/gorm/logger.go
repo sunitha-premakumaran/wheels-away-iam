@@ -44,17 +44,16 @@ func (g *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		sql, rows := fc()
 
-		g.logger.Err(err).Ctx(ctx).Str(QueryKey, sql).Dur(DurationKey, elapsed).Int64(RowsKey, rows)
+		g.logger.Error().Err(err).Ctx(ctx).Str(QueryKey, sql).Dur(DurationKey, elapsed).Int64(RowsKey, rows).Msg("")
 	} else if g.logLevel == Info {
 		sql, rows := fc()
-
-		g.logger.Info().Ctx(ctx).Str(QueryKey, sql).Dur(DurationKey, elapsed).Int64(RowsKey, rows)
+		g.logger.Info().Ctx(ctx).Str(QueryKey, sql).Dur(DurationKey, elapsed).Int64(RowsKey, rows).Msg("query successfully executed")
 	}
 }
 
 func NewGormLogger(logger *zerolog.Logger, config *Config) *GormLogger {
 	return &GormLogger{
 		logger:   logger,
-		logLevel: config.LogLevel,
+		logLevel: LogLevel(config.LogLevel),
 	}
 }
