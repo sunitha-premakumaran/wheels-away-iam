@@ -13,6 +13,7 @@ type User struct {
 	UUID          string           `validate:"required,uuid4"`
 	FirstName     string           `validate:"required,max=150"`
 	LastName      string           `validate:"required,max=150"`
+	Password      string           `validate:"required,max=150"`
 	Email         string           `validate:"required,max=250"`
 	Phone         string           `validate:"required,max=10"`
 	ProfileImage  *string          `validate:"omitempty,ascii,max=250"`

@@ -6,14 +6,16 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/sunitha/wheels-away-iam/pkg/gorm"
+	"github.com/sunitha/wheels-away-iam/pkg/zitadel"
 )
 
 type Config struct {
-	Env       string      `mapstructure:"ENVIRONMENT"`
-	APIPort   int         `mapstructure:"API_PORT"`
-	Database  gorm.Config `mapstructure:",squash"`
-	LogLevel  string      `mapstructure:"LOG_LEVEL"`
-	LogFormat string      `mapstructure:"LOG_FORMAT"`
+	Env           string         `mapstructure:"ENVIRONMENT"`
+	APIPort       int            `mapstructure:"API_PORT"`
+	Database      gorm.Config    `mapstructure:",squash"`
+	LogLevel      string         `mapstructure:"LOG_LEVEL"`
+	LogFormat     string         `mapstructure:"LOG_FORMAT"`
+	ZitadelConfig zitadel.Config `mapstructure:",squash"`
 }
 
 func Init(configName string) *Config {
