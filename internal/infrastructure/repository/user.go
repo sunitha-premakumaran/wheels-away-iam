@@ -5,7 +5,9 @@ import (
 	"errors"
 
 	"github.com/sunitha/wheels-away-iam/internal/core/domain"
-	"github.com/sunitha/wheels-away-iam/internal/infrastructure/tables"
+	"github.com/sunitha/wheels-away-iam/internal/infrastructure/builders"
+	"github.com/sunitha/wheels-away-iam/internal/infrastructure/models/queries"
+	"github.com/sunitha/wheels-away-iam/internal/infrastructure/models/tables"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -25,8 +27,14 @@ func (r *UserRepository) GetUsers(ctx context.Context) ([]*domain.DecoratedUser,
 }
 
 func (r *UserRepository) getUsers() ([]*domain.DecoratedUser, error) {
-	var users []*tables.User
-	result := r.gormDB.Model(&tables.User{}).Find(&users)
+	var users []*queries.UserWithRolesRow
+
+	builder := builders.NewUsersWithRolesBuilder(0, 100, nil, nil)
+
+	query, params := builder.Build()
+
+	result := r.gormDB.Raw(query, params).Find(&users)
+
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil

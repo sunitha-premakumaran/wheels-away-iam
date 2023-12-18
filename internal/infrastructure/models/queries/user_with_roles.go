@@ -1,4 +1,4 @@
-package tables
+package queries
 
 import (
 	"time"
@@ -8,7 +8,7 @@ import (
 	"github.com/sunitha/wheels-away-iam/internal/core/enums"
 )
 
-type User struct {
+type UserWithRolesRow struct {
 	UUID            string         `gorm:"column:user_pk;primaryKey"`
 	FirstName       string         `gorm:"column:first_name"`
 	LastName        string         `gorm:"column:last_name"`
@@ -24,14 +24,13 @@ type User struct {
 	LastUpdatedBy   *string        `gorm:"column:lastupdated_by"`
 	DeletedAt       *time.Time     `gorm:"column:deleted_at"`
 	DeletedBy       *string        `gorm:"column:deleted_by"`
-	RoleUUID        string         `gorm:"column:id;primaryKey"`
-	RoleDescription *string        `gorm:"column:description"`
-	RoleName        string         `gorm:"column:name"`
-	RoleScopes      pq.StringArray `gorm:"column:scopes"`
-	RoleAuthID      string         `gorm:"column:auth_id"`
+	RoleUUID        string         `gorm:"column:role_pk;primaryKey"`
+	RoleDescription *string        `gorm:"column:role_description"`
+	RoleName        string         `gorm:"column:role_name"`
+	RoleScopes      pq.StringArray `gorm:"column:role_scopes"`
 }
 
-func (User) TableName() string {
+func (UserWithRolesRow) TableName() string {
 	return "users"
 }
 
@@ -45,7 +44,7 @@ func toEnumStatus(status string) enums.UserStatus {
 	return ""
 }
 
-func (r *User) ToUserDomain() *domain.User {
+func (r *UserWithRolesRow) ToUserDomain() *domain.User {
 	return &domain.User{
 		UUID:          r.UUID,
 		FirstName:     r.FirstName,
@@ -65,7 +64,24 @@ func (r *User) ToUserDomain() *domain.User {
 	}
 }
 
-func (r *User) ToRoleDomain() *domain.Role {
+func toEnumScopes(scopes []string) []enums.UserScope {
+	us := make([]enums.UserScope, 0, len(scopes))
+	for _, s := range us {
+		switch s {
+		case "roles.read":
+			us = append(us, enums.ROLES_READ)
+		case "roles.write":
+			us = append(us, enums.ROLES_WRITE)
+		case "users.read":
+			us = append(us, enums.USERS_READ)
+		case "users.write":
+			us = append(us, enums.USERS_WRITE)
+		}
+	}
+	return us
+}
+
+func (r *UserWithRolesRow) ToRoleDomain() *domain.Role {
 	return &domain.Role{
 		UUID:        r.RoleUUID,
 		Name:        r.RoleName,

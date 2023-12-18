@@ -1,11 +1,13 @@
-type UserUpsertResponse {
-  success: Boolean!
-  errorMessage: String
-}
-
 enum UserStatus {
   ACTIVE
   IN_ACTIVE
+}
+
+enum UserScopes {
+  USER_READ
+  USER_WRITE
+  ROLE_READ
+  ROLE_WRITE
 }
 
 input UserInput {
@@ -18,6 +20,8 @@ input UserInput {
 
 input RoleInput {
   name: String!
+  description: String!
+  scopes: [UserScopes]!
 }
 
 type User {
@@ -31,7 +35,7 @@ type User {
   userRoles: [String]!
 }
 
-type RoleUpsertResponse {
+type UpsertResponse {
   success: Boolean!
   errorMessage: String
 }
@@ -49,9 +53,9 @@ type Query {
 }
 
 type Mutation {
-  createUser(user: UserInput): UserUpsertResponse
-  createRole(role: RoleInput): RoleUpsertResponse
-  modifyUser(deleteFlag: Boolean!, user: UserInput): UserUpsertResponse
-  modifyRole(role: RoleInput): RoleUpsertResponse
+  createUser(user: UserInput): UpsertResponse
+  createRole(role: RoleInput): UpsertResponse
+  modifyUser(deleteFlag: Boolean!, user: UserInput): UpsertResponse
+  modifyRole(role: RoleInput): UpsertResponse
   onUserLogin(user: UserInput): User
 }
