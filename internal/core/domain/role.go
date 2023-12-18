@@ -13,7 +13,6 @@ type Role struct {
 	UUID          string            `validate:"required,uuid4"`
 	Name          string            `validate:"required,max=150"`
 	Description   *string           `validate:"omitempty,ascii,max=250"`
-	AuthID        string            `validate:"required,ascii,max=250"`
 	Scopes        []enums.UserScope `validate:"required"`
 	CreatedAt     time.Time         `validate:"required"`
 	CreatedBy     string            `validate:"required,ascii,max=100"`
@@ -23,13 +22,12 @@ type Role struct {
 	DeletedBy     *string           `validate:"omitempty,ascii,max=100"`
 }
 
-func NewRole(name string, description *string, scopes []enums.UserScope, authID, createdBy string) (*Role, error) {
+func NewRole(name string, description *string, scopes []enums.UserScope, createdBy string) (*Role, error) {
 	r := &Role{
 		UUID:        uuid.NewString(),
 		Name:        name,
 		Description: description,
 		Scopes:      scopes,
-		AuthID:      authID,
 		CreatedAt:   time.Now(),
 		CreatedBy:   createdBy,
 	}

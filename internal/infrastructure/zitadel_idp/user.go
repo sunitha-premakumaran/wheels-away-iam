@@ -32,6 +32,24 @@ func (c *ZitadelUserInteractor) CreateIDPUser(ctx context.Context, user *domain.
 	return response.UserId, nil
 }
 
+func (c *ZitadelUserInteractor) CreateUserGrant(ctx context.Context, userID string, roles []string) error {
+	grantZ := mapToUserGrant(c.ProjectID, userID, roles)
+	_, err := c.Client.AddUserGrant(ctx, grantZ)
+	if err != nil {
+		c.logger.Error().Msgf("error while creating user in zitadel: %s", err.Error())
+		return fmt.Errorf("error while creating user in zitadel: %w", err)
+	}
+	return nil
+}
+
+func mapToUserGrant(projectID, userID string, roles []string) *management.AddUserGrantRequest {
+	return &management.AddUserGrantRequest{
+		UserId:    userID,
+		RoleKeys:  roles,
+		ProjectId: projectID,
+	}
+}
+
 func mapDomainUserToZitadel(user *domain.User) *management.ImportHumanUserRequest {
 	return &management.ImportHumanUserRequest{
 		UserName: user.Email,

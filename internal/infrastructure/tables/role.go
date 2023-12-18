@@ -9,11 +9,10 @@ import (
 )
 
 type Role struct {
-	UUID          string         `gorm:"column:id;primaryKey"`
+	UUID          string         `gorm:"column:role_pk;primaryKey"`
 	Description   *string        `gorm:"column:description"`
 	Name          string         `gorm:"column:name"`
 	Scopes        pq.StringArray `gorm:"column:scopes"`
-	AuthID        string         `gorm:"column:auth_id"`
 	CreatedBy     string         `gorm:"column:created_by"`
 	CreatedAt     time.Time      `gorm:"column:created_at"`
 	LastUpdatedAt *time.Time     `gorm:"column:lastupdated_at"`
@@ -49,7 +48,6 @@ func (r *Role) ToRoleDomain() *domain.Role {
 		Name:          r.Name,
 		Description:   r.Description,
 		Scopes:        toEnumScopes(r.Scopes),
-		AuthID:        r.AuthID,
 		CreatedBy:     r.CreatedBy,
 		CreatedAt:     r.CreatedAt,
 		LastUpdatedAt: r.LastUpdatedAt,

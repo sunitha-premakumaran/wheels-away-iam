@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	UUID            string         `gorm:"column:id;primaryKey"`
+	UUID            string         `gorm:"column:user_pk;primaryKey"`
 	FirstName       string         `gorm:"column:first_name"`
 	LastName        string         `gorm:"column:last_name"`
 	Email           string         `gorm:"column:email"`
@@ -71,6 +71,5 @@ func (r *User) ToRoleDomain() *domain.Role {
 		Name:        r.RoleName,
 		Description: r.RoleDescription,
 		Scopes:      toEnumScopes(r.RoleScopes),
-		AuthID:      r.RoleAuthID,
 	}
 }
