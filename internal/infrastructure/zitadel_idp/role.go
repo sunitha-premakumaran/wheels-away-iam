@@ -23,14 +23,14 @@ func NewZitadelRoleInteractor(client *zitadel.ZitadelClient, logger *zerolog.Log
 	}
 }
 
-func (c *ZitadelUserInteractor) SaveIDPRole(ctx context.Context, role *domain.Role) error {
+func (c *ZitadelUserInteractor) SaveIDPRole(ctx context.Context, role *domain.Role) (string, error) {
 	roleZ := mapDomainRoleToZitadel(c.ProjectID, role)
 	_, err := c.Client.AddProjectRole(ctx, roleZ)
 	if err != nil {
 		c.logger.Error().Msgf("error while creating role in zitadel: %s", err.Error())
-		return fmt.Errorf("error while creating role in zitadel: %w", err)
+		return "", fmt.Errorf("error while creating role in zitadel: %w", err)
 	}
-	return nil
+	return roleZ.RoleKey, nil
 }
 
 func mapDomainRoleToZitadel(projectID string, role *domain.Role) *management.AddProjectRoleRequest {

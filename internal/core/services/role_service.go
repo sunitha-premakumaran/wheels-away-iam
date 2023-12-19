@@ -7,19 +7,23 @@ import (
 )
 
 type RoleInteractor struct {
-	userRepo RoleRepository
+	roleRepo RoleRepository
 }
 
-func NewRoleInteractor(userRepo RoleRepository) *RoleInteractor {
+func NewRoleInteractor(roleRepo RoleRepository) *RoleInteractor {
 	return &RoleInteractor{
-		userRepo: userRepo,
+		roleRepo: roleRepo,
 	}
 }
 
 func (i *RoleInteractor) GetRoles(ctx context.Context) ([]*domain.Role, error) {
-	return i.userRepo.GetRoles(ctx)
+	return i.roleRepo.GetRoles(ctx)
 }
 
-func (i *RoleInteractor) SaveRole(ctx context.Context, user *domain.Role) error {
-	return i.userRepo.SaveRole(ctx, user)
+func (i *RoleInteractor) SaveRole(ctx context.Context, role *domain.Role) error {
+	return i.roleRepo.SaveRole(ctx, role)
+}
+
+func (i *RoleInteractor) GetRolesByIDs(ctx context.Context, roleIDs []string) ([]*domain.Role, error) {
+	return i.roleRepo.GetRolesByIDs(ctx, roleIDs)
 }

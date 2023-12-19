@@ -19,7 +19,7 @@ type User struct {
 	ProfileImage  *string          `validate:"omitempty,ascii,max=250"`
 	Description   *string          `validate:"omitempty,ascii,max=250"`
 	Status        enums.UserStatus `validate:"required"`
-	AuthID        string           `validate:"required,ascii,max=250"`
+	AuthID        string           `validate:"omitempty,ascii,max=250"`
 	Metadata      interface{}      `validate:"omitempty"`
 	CreatedAt     time.Time        `validate:"required"`
 	CreatedBy     string           `validate:"required,ascii,max=100"`

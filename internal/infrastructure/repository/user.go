@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/sunitha/wheels-away-iam/internal/core/domain"
 	"github.com/sunitha/wheels-away-iam/internal/infrastructure/builders"
@@ -23,8 +24,16 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 func (r *UserRepository) GetUsers(ctx context.Context, page, size int,
-	searchKey *domain.UserSearhKey, searchString *string) ([]*domain.DecoratedUser, error) {
-	return r.getUsers(page, size, searchKey, searchString)
+	searchKey *domain.UserSearhKey, searchString *string) ([]*domain.DecoratedUser, *domain.PageInfo, error) {
+	users, err := r.getUsers(page, size, searchKey, searchString)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed getting users: %w", err)
+	}
+	pageInfo, err := r.getUsersCount(page, size, searchKey, searchString)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed getting user_count: %w", err)
+	}
+	return users, pageInfo, nil
 }
 
 func (r *UserRepository) getUsers(page, size int, searchKey *domain.UserSearhKey,
@@ -58,9 +67,38 @@ func (r *UserRepository) getUsers(page, size int, searchKey *domain.UserSearhKey
 }
 
 func (r *UserRepository) getUsersCount(page, size int, searchKey *domain.UserSearhKey,
-	searchString *string) ([]*domain.PageInfo, error) {
+	searchString *string) (*domain.PageInfo, error) {
+	var count int64
+	query := r.gormDB.Model(&tables.User{}).Where("deleted_at IS NULL")
+	if searchKey != nil && searchString != nil {
+		switch *searchKey {
+		case domain.Name:
+			query = query.Where("upper(first_name) LIKE upper(%?%)", searchString).Or("upper(last_name) LIKE upper(%?%)", searchString)
+		case domain.Email:
+			query = query.Where("upper(email) LIKE upper(%?%)", searchString)
+		}
+	}
 
-	return nil, nil
+	result := query.Count(&count)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return toPageInfo(int(count), page, size), nil
+}
+
+func toPageInfo(count, pageNumber, pageSize int) *domain.PageInfo {
+	totalItems := count
+	totalPages := (count + pageSize - 1) / pageSize
+
+	return &domain.PageInfo{
+		CurrentPage: pageNumber,
+		PageSize:    pageSize,
+		TotalPages:  totalPages,
+		TotalItems:  totalItems,
+	}
 }
 
 func (r *UserRepository) SaveUser(ctx context.Context, user *domain.User) error {

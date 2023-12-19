@@ -13,6 +13,7 @@ type Role struct {
 	Description   *string        `gorm:"column:description"`
 	Name          string         `gorm:"column:name"`
 	Scopes        pq.StringArray `gorm:"column:scopes"`
+	AuthKey       string         `gorm:"column:auth_key"`
 	CreatedBy     string         `gorm:"column:created_by"`
 	CreatedAt     time.Time      `gorm:"column:created_at"`
 	LastUpdatedAt *time.Time     `gorm:"column:lastupdated_at"`
@@ -49,6 +50,7 @@ func (r *Role) ToRoleDomain() *domain.Role {
 		Description:   r.Description,
 		Scopes:        toEnumScopes(r.Scopes),
 		CreatedBy:     r.CreatedBy,
+		AuthKey:       r.AuthKey,
 		CreatedAt:     r.CreatedAt,
 		LastUpdatedAt: r.LastUpdatedAt,
 		LastUpdatedBy: r.LastUpdatedBy,

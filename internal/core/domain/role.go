@@ -14,6 +14,7 @@ type Role struct {
 	Name          string            `validate:"required,max=150"`
 	Description   *string           `validate:"omitempty,ascii,max=250"`
 	Scopes        []enums.UserScope `validate:"required"`
+	AuthKey       string            `validate:"omitempty,ascii,max=150"`
 	CreatedAt     time.Time         `validate:"required"`
 	CreatedBy     string            `validate:"required,ascii,max=100"`
 	LastUpdatedAt *time.Time        `validate:""`

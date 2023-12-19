@@ -26,6 +26,17 @@ func NewUserProcessor(userInteractor UserInteractor) *UserProcessor {
 	}
 }
 
+func (p *UserProcessor) CreateUser(ctx context.Context, user *model.UserInput) (*model.UpsertResponse, error) {
+	_, err := domain.NewUser(user.FirstName, user.LastName, user.Email, user.Phone, nil, nil, enums.INACTIVE, "", domain.SystemUUID)
+	if err != nil {
+		return nil, fmt.Errorf("validation for user failed: %w", err)
+	}
+	return &model.UpsertResponse{
+		Success:      true,
+		ErrorMessage: nil,
+	}, nil
+}
+
 func (p *UserProcessor) GetUsers(ctx context.Context, pageInput model.PageInput, searchInput *model.UserSearchInput) (*model.UserResponse, error) {
 	var searckKey domain.UserSearhKey
 	var searchString string
@@ -37,12 +48,13 @@ func (p *UserProcessor) GetUsers(ctx context.Context, pageInput model.PageInput,
 		}
 		searchString = searchInput.SearchString
 	}
-	du, err := p.userInteractor.GetUsers(ctx, pageInput.PageNumber, pageInput.PageSize, &searckKey, &searchString)
+	du, pageInfo, err := p.userInteractor.GetUsers(ctx, pageInput.PageNumber, pageInput.PageSize, &searckKey, &searchString)
 	if err != nil {
 		return nil, fmt.Errorf("error getting users: %w", err)
 	}
 	return &model.UserResponse{
-		Users: p.mapDecoratedUsersToModel(du),
+		Users:    p.mapDecoratedUsersToModel(du),
+		PageInfo: p.mapPagedInfoToModel(pageInfo),
 	}, nil
 }
 
@@ -63,6 +75,15 @@ func (p *UserProcessor) mapDecoratedUsersToModel(du []*domain.DecoratedUser) []*
 		})
 	}
 	return mu
+}
+
+func (p *UserProcessor) mapPagedInfoToModel(pageInfo *domain.PageInfo) *model.PageInfo {
+	return &model.PageInfo{
+		PageSize:   pageInfo.PageSize,
+		PageNumber: pageInfo.CurrentPage,
+		TotalItems: pageInfo.TotalItems,
+		TotalPages: pageInfo.TotalPages,
+	}
 }
 
 func statusToModel(status enums.UserStatus) model.UserStatus {

@@ -9,7 +9,8 @@ import (
 type (
 	UserInteractor interface {
 		GetUsers(ctx context.Context, page, size int,
-			searchKey *domain.UserSearhKey, searchString *string) ([]*domain.DecoratedUser, error)
+			searchKey *domain.UserSearhKey, searchString *string) (
+			[]*domain.DecoratedUser, *domain.PageInfo, error)
 		SaveUser(ctx context.Context, user *domain.User) error
 	}
 
