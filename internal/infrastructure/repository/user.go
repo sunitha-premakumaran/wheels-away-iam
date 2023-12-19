@@ -22,19 +22,17 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) GetUsers(ctx context.Context) ([]*domain.DecoratedUser, error) {
-	return r.getUsers()
+func (r *UserRepository) GetUsers(ctx context.Context, page, size int,
+	searchKey *domain.UserSearhKey, searchString *string) ([]*domain.DecoratedUser, error) {
+	return r.getUsers(page, size, searchKey, searchString)
 }
 
-func (r *UserRepository) getUsers() ([]*domain.DecoratedUser, error) {
+func (r *UserRepository) getUsers(page, size int, searchKey *domain.UserSearhKey,
+	searchString *string) ([]*domain.DecoratedUser, error) {
 	var users []*queries.UserWithRolesRow
-
-	builder := builders.NewUsersWithRolesBuilder(0, 100, nil, nil)
-
-	query, params := builder.Build()
-
-	result := r.gormDB.Raw(query, params).Find(&users)
-
+	builder := builders.NewUsersWithRolesBuilder(page, size, searchKey, searchString)
+	rawSQL, params := builder.Build()
+	result := r.gormDB.Raw(rawSQL, params).Find(&users)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -45,7 +43,6 @@ func (r *UserRepository) getUsers() ([]*domain.DecoratedUser, error) {
 	for _, u := range users {
 		if us, ok := mu[u.UUID]; ok {
 			us.UserRoles = append(us.UserRoles, u.ToRoleDomain())
-
 		} else {
 			mu[u.UUID] = &domain.DecoratedUser{
 				User:      u.ToUserDomain(),
@@ -56,9 +53,14 @@ func (r *UserRepository) getUsers() ([]*domain.DecoratedUser, error) {
 	var du []*domain.DecoratedUser
 	for _, u := range mu {
 		du = append(du, u)
-
 	}
 	return du, nil
+}
+
+func (r *UserRepository) getUsersCount(page, size int, searchKey *domain.UserSearhKey,
+	searchString *string) ([]*domain.PageInfo, error) {
+
+	return nil, nil
 }
 
 func (r *UserRepository) SaveUser(ctx context.Context, user *domain.User) error {

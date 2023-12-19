@@ -11,7 +11,7 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type UserProcessor interface {
-	GetUsers(ctx context.Context) ([]*model.User, error)
+	GetUsers(ctx context.Context, pageInput model.PageInput, searchInput *model.UserSearchInput) (*model.UserResponse, error)
 }
 
 type Resolver struct {

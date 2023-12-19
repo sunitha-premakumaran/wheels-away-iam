@@ -13,22 +13,22 @@ import (
 )
 
 // CreateUser is the resolver for the createUser field.
-func (r *mutationResolver) CreateUser(ctx context.Context, user *model.UserInput) (*model.UserUpsertResponse, error) {
+func (r *mutationResolver) CreateUser(ctx context.Context, user *model.UserInput) (*model.UpsertResponse, error) {
 	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
 }
 
 // CreateRole is the resolver for the createRole field.
-func (r *mutationResolver) CreateRole(ctx context.Context, role *model.RoleInput) (*model.RoleUpsertResponse, error) {
+func (r *mutationResolver) CreateRole(ctx context.Context, role *model.RoleInput) (*model.UpsertResponse, error) {
 	panic(fmt.Errorf("not implemented: CreateRole - createRole"))
 }
 
 // ModifyUser is the resolver for the modifyUser field.
-func (r *mutationResolver) ModifyUser(ctx context.Context, deleteFlag bool, user *model.UserInput) (*model.UserUpsertResponse, error) {
+func (r *mutationResolver) ModifyUser(ctx context.Context, deleteFlag bool, user *model.UserInput) (*model.UpsertResponse, error) {
 	panic(fmt.Errorf("not implemented: ModifyUser - modifyUser"))
 }
 
 // ModifyRole is the resolver for the modifyRole field.
-func (r *mutationResolver) ModifyRole(ctx context.Context, role *model.RoleInput) (*model.RoleUpsertResponse, error) {
+func (r *mutationResolver) ModifyRole(ctx context.Context, role *model.RoleInput) (*model.UpsertResponse, error) {
 	panic(fmt.Errorf("not implemented: ModifyRole - modifyRole"))
 }
 
@@ -43,8 +43,8 @@ func (r *queryResolver) GetRoles(ctx context.Context) ([]*model.Role, error) {
 }
 
 // GetUsers is the resolver for the getUsers field.
-func (r *queryResolver) GetUsers(ctx context.Context) ([]*model.User, error) {
-	return r.UserProcessor.GetUsers(ctx)
+func (r *queryResolver) GetUsers(ctx context.Context, pageInput model.PageInput, searchInput *model.UserSearchInput) (*model.UserResponse, error) {
+	return r.UserProcessor.GetUsers(ctx, pageInput, searchInput)
 }
 
 // Mutation returns graph.MutationResolver implementation.

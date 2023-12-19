@@ -16,6 +16,11 @@ func NewUserInteractor(userRepo UserRepository) *UserInteractor {
 	}
 }
 
-func (i *UserInteractor) GetUsers(ctx context.Context) ([]*domain.DecoratedUser, error) {
-	return i.userRepo.GetUsers(ctx)
+func (i *UserInteractor) GetUsers(ctx context.Context, page, size int,
+	searchKey *domain.UserSearhKey, searchString *string) ([]*domain.DecoratedUser, error) {
+	return i.userRepo.GetUsers(ctx, page, size, searchKey, searchString)
+}
+
+func (i *UserInteractor) SaveUser(ctx context.Context, user *domain.User) error {
+	return i.userRepo.SaveUser(ctx, user)
 }

@@ -18,6 +18,21 @@ input UserInput {
   userRoles: [String]!
 }
 
+enum UserSearchKey {
+  EMAIL
+  NAME
+}
+
+input UserSearchInput {
+  searchKey: UserSearchKey!
+  searchString: String!
+}
+
+input PageInput {
+  pageSize: Int!
+  pageNumber: Int!
+}
+
 input RoleInput {
   name: String!
   description: String!
@@ -47,9 +62,21 @@ type Role {
   scopes: [String!]!
 }
 
+type PageInfo {
+  pageSize: Int!
+  pageNumber: Int!
+  totalItems: Int!
+  totalPages: Int!
+}
+
+type UserResponse {
+  users: [User]!
+  pageInfo: PageInfo!
+}
+
 type Query {
-  getRoles: [Role!]!
-  getUsers: [User!]!
+  getRoles: [Role]!
+  getUsers(pageInput: PageInput!, searchInput: UserSearchInput): UserResponse
 }
 
 type Mutation {

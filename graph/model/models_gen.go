@@ -8,6 +8,18 @@ import (
 	"strconv"
 )
 
+type PageInfo struct {
+	PageSize   int `json:"pageSize"`
+	PageNumber int `json:"pageNumber"`
+	TotalItems int `json:"totalItems"`
+	TotalPages int `json:"totalPages"`
+}
+
+type PageInput struct {
+	PageSize   int `json:"pageSize"`
+	PageNumber int `json:"pageNumber"`
+}
+
 type Role struct {
 	RoleName        string   `json:"roleName"`
 	RoleDescription string   `json:"roleDescription"`
@@ -16,10 +28,12 @@ type Role struct {
 }
 
 type RoleInput struct {
-	Name string `json:"name"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Scopes      []*UserScopes `json:"scopes"`
 }
 
-type RoleUpsertResponse struct {
+type UpsertResponse struct {
 	Success      bool    `json:"success"`
 	ErrorMessage *string `json:"errorMessage,omitempty"`
 }
@@ -36,12 +50,107 @@ type User struct {
 }
 
 type UserInput struct {
-	Name string `json:"name"`
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	UserRoles []*string `json:"userRoles"`
 }
 
-type UserUpsertResponse struct {
-	Success      bool    `json:"success"`
-	ErrorMessage *string `json:"errorMessage,omitempty"`
+type UserResponse struct {
+	Users    []*User   `json:"users"`
+	PageInfo *PageInfo `json:"pageInfo"`
+}
+
+type UserSearchInput struct {
+	SearchKey    UserSearchKey `json:"searchKey"`
+	SearchString string        `json:"searchString"`
+}
+
+type UserScopes string
+
+const (
+	UserScopesUserRead  UserScopes = "USER_READ"
+	UserScopesUserWrite UserScopes = "USER_WRITE"
+	UserScopesRoleRead  UserScopes = "ROLE_READ"
+	UserScopesRoleWrite UserScopes = "ROLE_WRITE"
+)
+
+var AllUserScopes = []UserScopes{
+	UserScopesUserRead,
+	UserScopesUserWrite,
+	UserScopesRoleRead,
+	UserScopesRoleWrite,
+}
+
+func (e UserScopes) IsValid() bool {
+	switch e {
+	case UserScopesUserRead, UserScopesUserWrite, UserScopesRoleRead, UserScopesRoleWrite:
+		return true
+	}
+	return false
+}
+
+func (e UserScopes) String() string {
+	return string(e)
+}
+
+func (e *UserScopes) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserScopes(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserScopes", str)
+	}
+	return nil
+}
+
+func (e UserScopes) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UserSearchKey string
+
+const (
+	UserSearchKeyEmail UserSearchKey = "EMAIL"
+	UserSearchKeyName  UserSearchKey = "NAME"
+)
+
+var AllUserSearchKey = []UserSearchKey{
+	UserSearchKeyEmail,
+	UserSearchKeyName,
+}
+
+func (e UserSearchKey) IsValid() bool {
+	switch e {
+	case UserSearchKeyEmail, UserSearchKeyName:
+		return true
+	}
+	return false
+}
+
+func (e UserSearchKey) String() string {
+	return string(e)
+}
+
+func (e *UserSearchKey) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserSearchKey(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserSearchKey", str)
+	}
+	return nil
+}
+
+func (e UserSearchKey) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type UserStatus string

@@ -9,6 +9,13 @@ import (
 	"github.com/sunitha/wheels-away-iam/internal/core/enums"
 )
 
+var (
+	userSearchKey = map[model.UserSearchKey]domain.UserSearhKey{
+		model.UserSearchKeyEmail: domain.Email,
+		model.UserSearchKeyName:  domain.Name,
+	}
+)
+
 type UserProcessor struct {
 	userInteractor UserInteractor
 }
@@ -19,12 +26,24 @@ func NewUserProcessor(userInteractor UserInteractor) *UserProcessor {
 	}
 }
 
-func (p *UserProcessor) GetUsers(ctx context.Context) ([]*model.User, error) {
-	du, err := p.userInteractor.GetUsers(ctx)
+func (p *UserProcessor) GetUsers(ctx context.Context, pageInput model.PageInput, searchInput *model.UserSearchInput) (*model.UserResponse, error) {
+	var searckKey domain.UserSearhKey
+	var searchString string
+	if searchInput != nil && searchInput.SearchString != "" {
+		var ok bool
+		searckKey, ok = userSearchKey[searchInput.SearchKey]
+		if !ok {
+			return nil, fmt.Errorf("User search key is not valid: %s", searchInput.SearchKey)
+		}
+		searchString = searchInput.SearchString
+	}
+	du, err := p.userInteractor.GetUsers(ctx, pageInput.PageNumber, pageInput.PageSize, &searckKey, &searchString)
 	if err != nil {
 		return nil, fmt.Errorf("error getting users: %w", err)
 	}
-	return p.mapDecoratedUsersToModel(du), nil
+	return &model.UserResponse{
+		Users: p.mapDecoratedUsersToModel(du),
+	}, nil
 }
 
 func (p *UserProcessor) mapDecoratedUsersToModel(du []*domain.DecoratedUser) []*model.User {

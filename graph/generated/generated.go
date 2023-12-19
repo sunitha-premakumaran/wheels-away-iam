@@ -52,9 +52,16 @@ type ComplexityRoot struct {
 		OnUserLogin func(childComplexity int, user *model.UserInput) int
 	}
 
+	PageInfo struct {
+		PageNumber func(childComplexity int) int
+		PageSize   func(childComplexity int) int
+		TotalItems func(childComplexity int) int
+		TotalPages func(childComplexity int) int
+	}
+
 	Query struct {
 		GetRoles func(childComplexity int) int
-		GetUsers func(childComplexity int) int
+		GetUsers func(childComplexity int, pageInput model.PageInput, searchInput *model.UserSearchInput) int
 	}
 
 	Role struct {
@@ -64,7 +71,7 @@ type ComplexityRoot struct {
 		Scopes          func(childComplexity int) int
 	}
 
-	RoleUpsertResponse struct {
+	UpsertResponse struct {
 		ErrorMessage func(childComplexity int) int
 		Success      func(childComplexity int) int
 	}
@@ -80,22 +87,22 @@ type ComplexityRoot struct {
 		UserRoles  func(childComplexity int) int
 	}
 
-	UserUpsertResponse struct {
-		ErrorMessage func(childComplexity int) int
-		Success      func(childComplexity int) int
+	UserResponse struct {
+		PageInfo func(childComplexity int) int
+		Users    func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	CreateUser(ctx context.Context, user *model.UserInput) (*model.UserUpsertResponse, error)
-	CreateRole(ctx context.Context, role *model.RoleInput) (*model.RoleUpsertResponse, error)
-	ModifyUser(ctx context.Context, deleteFlag bool, user *model.UserInput) (*model.UserUpsertResponse, error)
-	ModifyRole(ctx context.Context, role *model.RoleInput) (*model.RoleUpsertResponse, error)
+	CreateUser(ctx context.Context, user *model.UserInput) (*model.UpsertResponse, error)
+	CreateRole(ctx context.Context, role *model.RoleInput) (*model.UpsertResponse, error)
+	ModifyUser(ctx context.Context, deleteFlag bool, user *model.UserInput) (*model.UpsertResponse, error)
+	ModifyRole(ctx context.Context, role *model.RoleInput) (*model.UpsertResponse, error)
 	OnUserLogin(ctx context.Context, user *model.UserInput) (*model.User, error)
 }
 type QueryResolver interface {
 	GetRoles(ctx context.Context) ([]*model.Role, error)
-	GetUsers(ctx context.Context) ([]*model.User, error)
+	GetUsers(ctx context.Context, pageInput model.PageInput, searchInput *model.UserSearchInput) (*model.UserResponse, error)
 }
 
 type executableSchema struct {
@@ -173,6 +180,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.OnUserLogin(childComplexity, args["user"].(*model.UserInput)), true
 
+	case "PageInfo.pageNumber":
+		if e.complexity.PageInfo.PageNumber == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.PageNumber(childComplexity), true
+
+	case "PageInfo.pageSize":
+		if e.complexity.PageInfo.PageSize == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.PageSize(childComplexity), true
+
+	case "PageInfo.totalItems":
+		if e.complexity.PageInfo.TotalItems == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.TotalItems(childComplexity), true
+
+	case "PageInfo.totalPages":
+		if e.complexity.PageInfo.TotalPages == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.TotalPages(childComplexity), true
+
 	case "Query.getRoles":
 		if e.complexity.Query.GetRoles == nil {
 			break
@@ -185,7 +220,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.GetUsers(childComplexity), true
+		args, err := ec.field_Query_getUsers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetUsers(childComplexity, args["pageInput"].(model.PageInput), args["searchInput"].(*model.UserSearchInput)), true
 
 	case "Role.roleDescription":
 		if e.complexity.Role.RoleDescription == nil {
@@ -215,19 +255,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Role.Scopes(childComplexity), true
 
-	case "RoleUpsertResponse.errorMessage":
-		if e.complexity.RoleUpsertResponse.ErrorMessage == nil {
+	case "UpsertResponse.errorMessage":
+		if e.complexity.UpsertResponse.ErrorMessage == nil {
 			break
 		}
 
-		return e.complexity.RoleUpsertResponse.ErrorMessage(childComplexity), true
+		return e.complexity.UpsertResponse.ErrorMessage(childComplexity), true
 
-	case "RoleUpsertResponse.success":
-		if e.complexity.RoleUpsertResponse.Success == nil {
+	case "UpsertResponse.success":
+		if e.complexity.UpsertResponse.Success == nil {
 			break
 		}
 
-		return e.complexity.RoleUpsertResponse.Success(childComplexity), true
+		return e.complexity.UpsertResponse.Success(childComplexity), true
 
 	case "User.authUserID":
 		if e.complexity.User.AuthUserID == nil {
@@ -285,19 +325,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UserRoles(childComplexity), true
 
-	case "UserUpsertResponse.errorMessage":
-		if e.complexity.UserUpsertResponse.ErrorMessage == nil {
+	case "UserResponse.pageInfo":
+		if e.complexity.UserResponse.PageInfo == nil {
 			break
 		}
 
-		return e.complexity.UserUpsertResponse.ErrorMessage(childComplexity), true
+		return e.complexity.UserResponse.PageInfo(childComplexity), true
 
-	case "UserUpsertResponse.success":
-		if e.complexity.UserUpsertResponse.Success == nil {
+	case "UserResponse.users":
+		if e.complexity.UserResponse.Users == nil {
 			break
 		}
 
-		return e.complexity.UserUpsertResponse.Success(childComplexity), true
+		return e.complexity.UserResponse.Users(childComplexity), true
 
 	}
 	return 0, false
@@ -307,8 +347,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputPageInput,
 		ec.unmarshalInputRoleInput,
 		ec.unmarshalInputUserInput,
+		ec.unmarshalInputUserSearchInput,
 	)
 	first := true
 
@@ -406,22 +448,45 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schema.graphqls", Input: `type UserUpsertResponse {
-  success: Boolean!
-  errorMessage: String
-}
-
-enum UserStatus {
+	{Name: "../schema.graphqls", Input: `enum UserStatus {
   ACTIVE
   IN_ACTIVE
 }
 
+enum UserScopes {
+  USER_READ
+  USER_WRITE
+  ROLE_READ
+  ROLE_WRITE
+}
+
 input UserInput {
-  name: String!
+  firstName: String!
+  lastName: String!
+  email: String!
+  phone: String!
+  userRoles: [String]!
+}
+
+enum UserSearchKey {
+  EMAIL
+  NAME
+}
+
+input UserSearchInput {
+  searchKey: UserSearchKey!
+  searchString: String!
+}
+
+input PageInput {
+  pageSize: Int!
+  pageNumber: Int!
 }
 
 input RoleInput {
   name: String!
+  description: String!
+  scopes: [UserScopes]!
 }
 
 type User {
@@ -435,7 +500,7 @@ type User {
   userRoles: [String]!
 }
 
-type RoleUpsertResponse {
+type UpsertResponse {
   success: Boolean!
   errorMessage: String
 }
@@ -447,16 +512,28 @@ type Role {
   scopes: [String!]!
 }
 
+type PageInfo {
+  pageSize: Int!
+  pageNumber: Int!
+  totalItems: Int!
+  totalPages: Int!
+}
+
+type UserResponse {
+  users: [User]!
+  pageInfo: PageInfo!
+}
+
 type Query {
-  getRoles: [Role!]!
-  getUsers: [User!]!
+  getRoles: [Role]!
+  getUsers(pageInput: PageInput!, searchInput: UserSearchInput): UserResponse
 }
 
 type Mutation {
-  createUser(user: UserInput): UserUpsertResponse
-  createRole(role: RoleInput): RoleUpsertResponse
-  modifyUser(deleteFlag: Boolean!, user: UserInput): UserUpsertResponse
-  modifyRole(role: RoleInput): RoleUpsertResponse
+  createUser(user: UserInput): UpsertResponse
+  createRole(role: RoleInput): UpsertResponse
+  modifyUser(deleteFlag: Boolean!, user: UserInput): UpsertResponse
+  modifyRole(role: RoleInput): UpsertResponse
   onUserLogin(user: UserInput): User
 }
 `, BuiltIn: false},
@@ -566,6 +643,30 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getUsers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.PageInput
+	if tmp, ok := rawArgs["pageInput"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageInput"))
+		arg0, err = ec.unmarshalNPageInput2githubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐPageInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageInput"] = arg0
+	var arg1 *model.UserSearchInput
+	if tmp, ok := rawArgs["searchInput"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("searchInput"))
+		arg1, err = ec.unmarshalOUserSearchInput2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserSearchInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchInput"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -627,9 +728,9 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserUpsertResponse)
+	res := resTmp.(*model.UpsertResponse)
 	fc.Result = res
-	return ec.marshalOUserUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserUpsertResponse(ctx, field.Selections, res)
+	return ec.marshalOUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUpsertResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -641,11 +742,11 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "success":
-				return ec.fieldContext_UserUpsertResponse_success(ctx, field)
+				return ec.fieldContext_UpsertResponse_success(ctx, field)
 			case "errorMessage":
-				return ec.fieldContext_UserUpsertResponse_errorMessage(ctx, field)
+				return ec.fieldContext_UpsertResponse_errorMessage(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type UserUpsertResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UpsertResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -685,9 +786,9 @@ func (ec *executionContext) _Mutation_createRole(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.RoleUpsertResponse)
+	res := resTmp.(*model.UpsertResponse)
 	fc.Result = res
-	return ec.marshalORoleUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRoleUpsertResponse(ctx, field.Selections, res)
+	return ec.marshalOUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUpsertResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createRole(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -699,11 +800,11 @@ func (ec *executionContext) fieldContext_Mutation_createRole(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "success":
-				return ec.fieldContext_RoleUpsertResponse_success(ctx, field)
+				return ec.fieldContext_UpsertResponse_success(ctx, field)
 			case "errorMessage":
-				return ec.fieldContext_RoleUpsertResponse_errorMessage(ctx, field)
+				return ec.fieldContext_UpsertResponse_errorMessage(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type RoleUpsertResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UpsertResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -743,9 +844,9 @@ func (ec *executionContext) _Mutation_modifyUser(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserUpsertResponse)
+	res := resTmp.(*model.UpsertResponse)
 	fc.Result = res
-	return ec.marshalOUserUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserUpsertResponse(ctx, field.Selections, res)
+	return ec.marshalOUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUpsertResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_modifyUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -757,11 +858,11 @@ func (ec *executionContext) fieldContext_Mutation_modifyUser(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "success":
-				return ec.fieldContext_UserUpsertResponse_success(ctx, field)
+				return ec.fieldContext_UpsertResponse_success(ctx, field)
 			case "errorMessage":
-				return ec.fieldContext_UserUpsertResponse_errorMessage(ctx, field)
+				return ec.fieldContext_UpsertResponse_errorMessage(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type UserUpsertResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UpsertResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -801,9 +902,9 @@ func (ec *executionContext) _Mutation_modifyRole(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.RoleUpsertResponse)
+	res := resTmp.(*model.UpsertResponse)
 	fc.Result = res
-	return ec.marshalORoleUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRoleUpsertResponse(ctx, field.Selections, res)
+	return ec.marshalOUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUpsertResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_modifyRole(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -815,11 +916,11 @@ func (ec *executionContext) fieldContext_Mutation_modifyRole(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "success":
-				return ec.fieldContext_RoleUpsertResponse_success(ctx, field)
+				return ec.fieldContext_UpsertResponse_success(ctx, field)
 			case "errorMessage":
-				return ec.fieldContext_RoleUpsertResponse_errorMessage(ctx, field)
+				return ec.fieldContext_UpsertResponse_errorMessage(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type RoleUpsertResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UpsertResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -906,6 +1007,182 @@ func (ec *executionContext) fieldContext_Mutation_onUserLogin(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _PageInfo_pageSize(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_pageSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_pageSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_pageNumber(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_pageNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_pageNumber(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_totalItems(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_totalItems(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalItems, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_totalItems(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_totalPages(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PageInfo_totalPages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalPages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_totalPages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getRoles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getRoles(ctx, field)
 	if err != nil {
@@ -934,7 +1211,7 @@ func (ec *executionContext) _Query_getRoles(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*model.Role)
 	fc.Result = res
-	return ec.marshalNRole2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRoleᚄ(ctx, field.Selections, res)
+	return ec.marshalNRole2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRole(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_getRoles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -974,21 +1251,18 @@ func (ec *executionContext) _Query_getUsers(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetUsers(rctx)
+		return ec.resolvers.Query().GetUsers(rctx, fc.Args["pageInput"].(model.PageInput), fc.Args["searchInput"].(*model.UserSearchInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.User)
+	res := resTmp.(*model.UserResponse)
 	fc.Result = res
-	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalOUserResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_getUsers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -999,25 +1273,24 @@ func (ec *executionContext) fieldContext_Query_getUsers(ctx context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "userID":
-				return ec.fieldContext_User_userID(ctx, field)
-			case "authUserID":
-				return ec.fieldContext_User_authUserID(ctx, field)
-			case "firstName":
-				return ec.fieldContext_User_firstName(ctx, field)
-			case "lastName":
-				return ec.fieldContext_User_lastName(ctx, field)
-			case "email":
-				return ec.fieldContext_User_email(ctx, field)
-			case "phone":
-				return ec.fieldContext_User_phone(ctx, field)
-			case "status":
-				return ec.fieldContext_User_status(ctx, field)
-			case "userRoles":
-				return ec.fieldContext_User_userRoles(ctx, field)
+			case "users":
+				return ec.fieldContext_UserResponse_users(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_UserResponse_pageInfo(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserResponse", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getUsers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -1327,8 +1600,8 @@ func (ec *executionContext) fieldContext_Role_scopes(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _RoleUpsertResponse_success(ctx context.Context, field graphql.CollectedField, obj *model.RoleUpsertResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RoleUpsertResponse_success(ctx, field)
+func (ec *executionContext) _UpsertResponse_success(ctx context.Context, field graphql.CollectedField, obj *model.UpsertResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpsertResponse_success(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1358,9 +1631,9 @@ func (ec *executionContext) _RoleUpsertResponse_success(ctx context.Context, fie
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_RoleUpsertResponse_success(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UpsertResponse_success(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "RoleUpsertResponse",
+		Object:     "UpsertResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1371,8 +1644,8 @@ func (ec *executionContext) fieldContext_RoleUpsertResponse_success(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _RoleUpsertResponse_errorMessage(ctx context.Context, field graphql.CollectedField, obj *model.RoleUpsertResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RoleUpsertResponse_errorMessage(ctx, field)
+func (ec *executionContext) _UpsertResponse_errorMessage(ctx context.Context, field graphql.CollectedField, obj *model.UpsertResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpsertResponse_errorMessage(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1399,9 +1672,9 @@ func (ec *executionContext) _RoleUpsertResponse_errorMessage(ctx context.Context
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_RoleUpsertResponse_errorMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UpsertResponse_errorMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "RoleUpsertResponse",
+		Object:     "UpsertResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1764,8 +2037,8 @@ func (ec *executionContext) fieldContext_User_userRoles(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _UserUpsertResponse_success(ctx context.Context, field graphql.CollectedField, obj *model.UserUpsertResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserUpsertResponse_success(ctx, field)
+func (ec *executionContext) _UserResponse_users(ctx context.Context, field graphql.CollectedField, obj *model.UserResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserResponse_users(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1778,7 +2051,7 @@ func (ec *executionContext) _UserUpsertResponse_success(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Success, nil
+		return obj.Users, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1790,26 +2063,44 @@ func (ec *executionContext) _UserUpsertResponse_success(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserUpsertResponse_success(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserResponse_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "UserUpsertResponse",
+		Object:     "UserResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "userID":
+				return ec.fieldContext_User_userID(ctx, field)
+			case "authUserID":
+				return ec.fieldContext_User_authUserID(ctx, field)
+			case "firstName":
+				return ec.fieldContext_User_firstName(ctx, field)
+			case "lastName":
+				return ec.fieldContext_User_lastName(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
+			case "status":
+				return ec.fieldContext_User_status(ctx, field)
+			case "userRoles":
+				return ec.fieldContext_User_userRoles(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _UserUpsertResponse_errorMessage(ctx context.Context, field graphql.CollectedField, obj *model.UserUpsertResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserUpsertResponse_errorMessage(ctx, field)
+func (ec *executionContext) _UserResponse_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.UserResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserResponse_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1822,28 +2113,41 @@ func (ec *executionContext) _UserUpsertResponse_errorMessage(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ErrorMessage, nil
+		return obj.PageInfo, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.PageInfo)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_UserUpsertResponse_errorMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserResponse_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "UserUpsertResponse",
+		Object:     "UserResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "pageSize":
+				return ec.fieldContext_PageInfo_pageSize(ctx, field)
+			case "pageNumber":
+				return ec.fieldContext_PageInfo_pageNumber(ctx, field)
+			case "totalItems":
+				return ec.fieldContext_PageInfo_totalItems(ctx, field)
+			case "totalPages":
+				return ec.fieldContext_PageInfo_totalPages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
 		},
 	}
 	return fc, nil
@@ -3622,6 +3926,44 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputPageInput(ctx context.Context, obj interface{}) (model.PageInput, error) {
+	var it model.PageInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"pageSize", "pageNumber"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "pageSize":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
+		case "pageNumber":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageNumber"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageNumber = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRoleInput(ctx context.Context, obj interface{}) (model.RoleInput, error) {
 	var it model.RoleInput
 	asMap := map[string]interface{}{}
@@ -3629,7 +3971,7 @@ func (ec *executionContext) unmarshalInputRoleInput(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name"}
+	fieldsInOrder := [...]string{"name", "description", "scopes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3645,6 +3987,24 @@ func (ec *executionContext) unmarshalInputRoleInput(ctx context.Context, obj int
 				return it, err
 			}
 			it.Name = data
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "scopes":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scopes"))
+			data, err := ec.unmarshalNUserScopes2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserScopes(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Scopes = data
 		}
 	}
 
@@ -3658,22 +4018,96 @@ func (ec *executionContext) unmarshalInputUserInput(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name"}
+	fieldsInOrder := [...]string{"firstName", "lastName", "email", "phone", "userRoles"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "name":
+		case "firstName":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Name = data
+			it.FirstName = data
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastName = data
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "phone":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Phone = data
+		case "userRoles":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userRoles"))
+			data, err := ec.unmarshalNString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserRoles = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserSearchInput(ctx context.Context, obj interface{}) (model.UserSearchInput, error) {
+	var it model.UserSearchInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"searchKey", "searchString"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "searchKey":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("searchKey"))
+			data, err := ec.unmarshalNUserSearchKey2githubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserSearchKey(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SearchKey = data
+		case "searchString":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("searchString"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SearchString = data
 		}
 	}
 
@@ -3750,6 +4184,60 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var pageInfoImplementors = []string{"PageInfo"}
+
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "pageSize":
+			out.Values[i] = ec._PageInfo_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageNumber":
+			out.Values[i] = ec._PageInfo_pageNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalItems":
+			out.Values[i] = ec._PageInfo_totalItems(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._PageInfo_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3801,9 +4289,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getUsers(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -3898,24 +4383,24 @@ func (ec *executionContext) _Role(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var roleUpsertResponseImplementors = []string{"RoleUpsertResponse"}
+var upsertResponseImplementors = []string{"UpsertResponse"}
 
-func (ec *executionContext) _RoleUpsertResponse(ctx context.Context, sel ast.SelectionSet, obj *model.RoleUpsertResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, roleUpsertResponseImplementors)
+func (ec *executionContext) _UpsertResponse(ctx context.Context, sel ast.SelectionSet, obj *model.UpsertResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, upsertResponseImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("RoleUpsertResponse")
+			out.Values[i] = graphql.MarshalString("UpsertResponse")
 		case "success":
-			out.Values[i] = ec._RoleUpsertResponse_success(ctx, field, obj)
+			out.Values[i] = ec._UpsertResponse_success(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "errorMessage":
-			out.Values[i] = ec._RoleUpsertResponse_errorMessage(ctx, field, obj)
+			out.Values[i] = ec._UpsertResponse_errorMessage(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4013,24 +4498,27 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var userUpsertResponseImplementors = []string{"UserUpsertResponse"}
+var userResponseImplementors = []string{"UserResponse"}
 
-func (ec *executionContext) _UserUpsertResponse(ctx context.Context, sel ast.SelectionSet, obj *model.UserUpsertResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, userUpsertResponseImplementors)
+func (ec *executionContext) _UserResponse(ctx context.Context, sel ast.SelectionSet, obj *model.UserResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userResponseImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("UserUpsertResponse")
-		case "success":
-			out.Values[i] = ec._UserUpsertResponse_success(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("UserResponse")
+		case "users":
+			out.Values[i] = ec._UserResponse_users(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "errorMessage":
-			out.Values[i] = ec._UserUpsertResponse_errorMessage(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._UserResponse_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4395,7 +4883,37 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNRole2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRoleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Role) graphql.Marshaler {
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPageInput2githubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐPageInput(ctx context.Context, v interface{}) (model.PageInput, error) {
+	res, err := ec.unmarshalInputPageInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRole2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v []*model.Role) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4419,7 +4937,7 @@ func (ec *executionContext) marshalNRole2ᚕᚖgithubᚗcomᚋsunithaᚋwheels�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNRole2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRole(ctx, sel, v[i])
+			ret[i] = ec.marshalORole2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRole(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4430,23 +4948,7 @@ func (ec *executionContext) marshalNRole2ᚕᚖgithubᚗcomᚋsunithaᚋwheels�
 	}
 	wg.Wait()
 
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
 	return ret
-}
-
-func (ec *executionContext) marshalNRole2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v *model.Role) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Role(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -4522,7 +5024,7 @@ func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel
 	return ret
 }
 
-func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4546,7 +5048,7 @@ func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋsunithaᚋwheels�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4557,23 +5059,72 @@ func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋsunithaᚋwheels�
 	}
 	wg.Wait()
 
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
+	return ret
+}
+
+func (ec *executionContext) unmarshalNUserScopes2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserScopes(ctx context.Context, v interface{}) ([]*model.UserScopes, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.UserScopes, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOUserScopes2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserScopes(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
 		}
 	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNUserScopes2ᚕᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserScopes(ctx context.Context, sel ast.SelectionSet, v []*model.UserScopes) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOUserScopes2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserScopes(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
 
 	return ret
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._User(ctx, sel, v)
+func (ec *executionContext) unmarshalNUserSearchKey2githubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserSearchKey(ctx context.Context, v interface{}) (model.UserSearchKey, error) {
+	var res model.UserSearchKey
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserSearchKey2githubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserSearchKey(ctx context.Context, sel ast.SelectionSet, v model.UserSearchKey) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNUserStatus2githubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserStatus(ctx context.Context, v interface{}) (model.UserStatus, error) {
@@ -4865,19 +5416,19 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v *model.Role) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Role(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalORoleInput2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRoleInput(ctx context.Context, v interface{}) (*model.RoleInput, error) {
 	if v == nil {
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputRoleInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalORoleUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRoleUpsertResponse(ctx context.Context, sel ast.SelectionSet, v *model.RoleUpsertResponse) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RoleUpsertResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
@@ -4896,6 +5447,13 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
+func (ec *executionContext) marshalOUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUpsertResponse(ctx context.Context, sel ast.SelectionSet, v *model.UpsertResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UpsertResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -4911,11 +5469,35 @@ func (ec *executionContext) unmarshalOUserInput2ᚖgithubᚗcomᚋsunithaᚋwhee
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOUserUpsertResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserUpsertResponse(ctx context.Context, sel ast.SelectionSet, v *model.UserUpsertResponse) graphql.Marshaler {
+func (ec *executionContext) marshalOUserResponse2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserResponse(ctx context.Context, sel ast.SelectionSet, v *model.UserResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._UserUpsertResponse(ctx, sel, v)
+	return ec._UserResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUserScopes2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserScopes(ctx context.Context, v interface{}) (*model.UserScopes, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.UserScopes)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOUserScopes2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserScopes(ctx context.Context, sel ast.SelectionSet, v *model.UserScopes) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOUserSearchInput2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐUserSearchInput(ctx context.Context, v interface{}) (*model.UserSearchInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserSearchInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
