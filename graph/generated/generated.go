@@ -44,6 +44,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ErrorMessage struct {
+		Code func(childComplexity int) int
+		Msg  func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateRole  func(childComplexity int, role *model.RoleInput) int
 		CreateUser  func(childComplexity int, user *model.UserInput) int
@@ -119,6 +124,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "ErrorMessage.code":
+		if e.complexity.ErrorMessage.Code == nil {
+			break
+		}
+
+		return e.complexity.ErrorMessage.Code(childComplexity), true
+
+	case "ErrorMessage.msg":
+		if e.complexity.ErrorMessage.Msg == nil {
+			break
+		}
+
+		return e.complexity.ErrorMessage.Msg(childComplexity), true
 
 	case "Mutation.createRole":
 		if e.complexity.Mutation.CreateRole == nil {
@@ -465,7 +484,7 @@ input UserInput {
   lastName: String!
   email: String!
   phone: String!
-  userRoles: [String]!
+  userRoles: [String!]!
 }
 
 enum UserSearchKey {
@@ -500,9 +519,14 @@ type User {
   userRoles: [String]!
 }
 
+type ErrorMessage {
+  code: String!
+  msg: String!
+}
+
 type UpsertResponse {
   success: Boolean!
-  errorMessage: String
+  errorMessage: ErrorMessage
 }
 
 type Role {
@@ -704,6 +728,94 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _ErrorMessage_code(ctx context.Context, field graphql.CollectedField, obj *model.ErrorMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ErrorMessage_code(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Code, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ErrorMessage_code(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ErrorMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ErrorMessage_msg(ctx context.Context, field graphql.CollectedField, obj *model.ErrorMessage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ErrorMessage_msg(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Msg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ErrorMessage_msg(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ErrorMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createUser(ctx, field)
@@ -1667,9 +1779,9 @@ func (ec *executionContext) _UpsertResponse_errorMessage(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ErrorMessage)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOErrorMessage2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐErrorMessage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpsertResponse_errorMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1679,7 +1791,13 @@ func (ec *executionContext) fieldContext_UpsertResponse_errorMessage(ctx context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "code":
+				return ec.fieldContext_ErrorMessage_code(ctx, field)
+			case "msg":
+				return ec.fieldContext_ErrorMessage_msg(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ErrorMessage", field.Name)
 		},
 	}
 	return fc, nil
@@ -4065,7 +4183,7 @@ func (ec *executionContext) unmarshalInputUserInput(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userRoles"))
-			data, err := ec.unmarshalNString2ᚕᚖstring(ctx, v)
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4121,6 +4239,50 @@ func (ec *executionContext) unmarshalInputUserSearchInput(ctx context.Context, o
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var errorMessageImplementors = []string{"ErrorMessage"}
+
+func (ec *executionContext) _ErrorMessage(ctx context.Context, sel ast.SelectionSet, obj *model.ErrorMessage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, errorMessageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ErrorMessage")
+		case "code":
+			out.Values[i] = ec._ErrorMessage_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "msg":
+			out.Values[i] = ec._ErrorMessage_msg(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var mutationImplementors = []string{"Mutation"}
 
@@ -5414,6 +5576,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOErrorMessage2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐErrorMessage(ctx context.Context, sel ast.SelectionSet, v *model.ErrorMessage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ErrorMessage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋsunithaᚋwheelsᚑawayᚑiamᚋgraphᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v *model.Role) graphql.Marshaler {

@@ -8,6 +8,11 @@ import (
 	"strconv"
 )
 
+type ErrorMessage struct {
+	Code string `json:"code"`
+	Msg  string `json:"msg"`
+}
+
 type PageInfo struct {
 	PageSize   int `json:"pageSize"`
 	PageNumber int `json:"pageNumber"`
@@ -34,8 +39,8 @@ type RoleInput struct {
 }
 
 type UpsertResponse struct {
-	Success      bool    `json:"success"`
-	ErrorMessage *string `json:"errorMessage,omitempty"`
+	Success      bool          `json:"success"`
+	ErrorMessage *ErrorMessage `json:"errorMessage,omitempty"`
 }
 
 type User struct {
@@ -50,11 +55,11 @@ type User struct {
 }
 
 type UserInput struct {
-	FirstName string    `json:"firstName"`
-	LastName  string    `json:"lastName"`
-	Email     string    `json:"email"`
-	Phone     string    `json:"phone"`
-	UserRoles []*string `json:"userRoles"`
+	FirstName string   `json:"firstName"`
+	LastName  string   `json:"lastName"`
+	Email     string   `json:"email"`
+	Phone     string   `json:"phone"`
+	UserRoles []string `json:"userRoles"`
 }
 
 type UserResponse struct {

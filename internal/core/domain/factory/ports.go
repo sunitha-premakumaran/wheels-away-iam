@@ -15,7 +15,6 @@ type (
 	}
 
 	RoleInteractor interface {
-		GetRoles(ctx context.Context) ([]*domain.Role, error)
 		SaveRole(ctx context.Context, role *domain.Role) error
 		GetRolesByIDs(ctx context.Context, roleIDs []string) ([]*domain.Role, error)
 	}

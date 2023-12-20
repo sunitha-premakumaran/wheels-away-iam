@@ -15,10 +15,12 @@ import (
 	"github.com/sunitha/wheels-away-iam/internal/core/services"
 	"github.com/sunitha/wheels-away-iam/internal/handlers/api"
 	"github.com/sunitha/wheels-away-iam/internal/infrastructure/repository"
+	"github.com/sunitha/wheels-away-iam/internal/infrastructure/zitadel_idp"
 	"github.com/sunitha/wheels-away-iam/pkg/gorm"
 	"github.com/sunitha/wheels-away-iam/pkg/health"
 	"github.com/sunitha/wheels-away-iam/pkg/logger"
 	"github.com/sunitha/wheels-away-iam/pkg/middlewares"
+	"github.com/sunitha/wheels-away-iam/pkg/zitadel"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -35,9 +37,19 @@ func main() {
 	logger := logger.NewLogger(config)
 	gc := gorm.NewDBClient(&config.Database, logger)
 
+	zClient := zitadel.NewZitadelClient(config.ZitadelConfig, logger)
+
+	roleRepo := repository.NewRoleRepository(gc.DB)
+	roleInteractor := services.NewRoleInteractor(roleRepo)
+
+	roleUserMapRepo := repository.NewRoleUserMappingRepository(gc.DB)
+	roleUserMapInteractor := services.NewRoleUserMappingInteractor(roleUserMapRepo)
+
+	userIDPInteractor := zitadel_idp.NewZitadelUserInteractor(zClient, logger)
+
 	userRepo := repository.NewUserRepository(gc.DB)
 	userInteractor := services.NewUserInteractor(userRepo)
-	userProcessor := api.NewUserProcessor(userInteractor)
+	userProcessor := api.NewUserProcessor(userInteractor, userIDPInteractor, roleUserMapInteractor, roleInteractor)
 
 	mux := http.NewServeMux()
 

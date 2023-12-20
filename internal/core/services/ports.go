@@ -16,7 +16,6 @@ type (
 
 	RoleRepository interface {
 		GetRolesByIDs(ctx context.Context, roleIDs []string) ([]*domain.Role, error)
-		GetRoles(ctx context.Context) ([]*domain.Role, error)
 		SaveRole(ctx context.Context, role *domain.Role) error
 	}
 

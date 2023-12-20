@@ -15,7 +15,7 @@ input UserInput {
   lastName: String!
   email: String!
   phone: String!
-  userRoles: [String]!
+  userRoles: [String!]!
 }
 
 enum UserSearchKey {
@@ -50,9 +50,14 @@ type User {
   userRoles: [String]!
 }
 
+type ErrorMessage {
+  code: String!
+  msg: String!
+}
+
 type UpsertResponse {
   success: Boolean!
-  errorMessage: String
+  errorMessage: ErrorMessage
 }
 
 type Role {

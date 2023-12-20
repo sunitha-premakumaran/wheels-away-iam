@@ -16,10 +16,6 @@ func NewRoleInteractor(roleRepo RoleRepository) *RoleInteractor {
 	}
 }
 
-func (i *RoleInteractor) GetRoles(ctx context.Context) ([]*domain.Role, error) {
-	return i.roleRepo.GetRoles(ctx)
-}
-
 func (i *RoleInteractor) SaveRole(ctx context.Context, role *domain.Role) error {
 	return i.roleRepo.SaveRole(ctx, role)
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sunitha/wheels-away-iam/graph/model"
 	"github.com/sunitha/wheels-away-iam/internal/core/domain"
+	"github.com/sunitha/wheels-away-iam/internal/core/domain/factory"
 	"github.com/sunitha/wheels-away-iam/internal/core/enums"
 )
 
@@ -17,19 +18,34 @@ var (
 )
 
 type UserProcessor struct {
-	userInteractor UserInteractor
+	userInteractor            UserInteractor
+	userIDPInteractor         UserIDPInteractor
+	roleUserMappingInteractor RoleUserMappingInteractor
+	roleInteractor            RoleInteractor
 }
 
-func NewUserProcessor(userInteractor UserInteractor) *UserProcessor {
+func NewUserProcessor(userInteractor UserInteractor, userIDPInteractor UserIDPInteractor,
+	roleUserMappingInteractor RoleUserMappingInteractor,
+	roleInteractor RoleInteractor) *UserProcessor {
 	return &UserProcessor{
-		userInteractor: userInteractor,
+		userIDPInteractor:         userIDPInteractor,
+		userInteractor:            userInteractor,
+		roleUserMappingInteractor: roleUserMappingInteractor,
+		roleInteractor:            roleInteractor,
 	}
 }
 
 func (p *UserProcessor) CreateUser(ctx context.Context, user *model.UserInput) (*model.UpsertResponse, error) {
-	_, err := domain.NewUser(user.FirstName, user.LastName, user.Email, user.Phone, nil, nil, enums.INACTIVE, "", domain.SystemUUID)
+	uFactory := factory.NewCreateUserFactory(p.userInteractor, p.userIDPInteractor, p.roleInteractor, p.roleUserMappingInteractor)
+	de, err := uFactory.Create(ctx, user.FirstName, user.LastName, user.Email, user.Phone, nil, nil, enums.INACTIVE, user.UserRoles, domain.SystemUUID)
 	if err != nil {
-		return nil, fmt.Errorf("validation for user failed: %w", err)
+		return &model.UpsertResponse{
+			Success: false,
+			ErrorMessage: &model.ErrorMessage{
+				Code: string(de),
+				Msg:  "",
+			},
+		}, nil
 	}
 	return &model.UpsertResponse{
 		Success:      true,

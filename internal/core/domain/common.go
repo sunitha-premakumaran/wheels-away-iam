@@ -14,6 +14,6 @@ var (
 )
 
 var (
-	InternalServerError HttpErrorCode = "InternalServerError"
-	BadRequestError     HttpErrorCode = "BadRequestError"
+	InternalServerError HttpErrorCode = "500_InternalServerError"
+	BadRequestError     HttpErrorCode = "401_BadRequestError"
 )

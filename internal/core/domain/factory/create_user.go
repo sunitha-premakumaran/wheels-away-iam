@@ -30,7 +30,7 @@ func NewCreateUserFactory(
 }
 
 func (f *CreateUserFactory) Create(ctx context.Context, firstName, lastName, email, phone string, profileImageUrl, description *string,
-	status enums.UserStatus, authID, userRoleIDs []string, createdBy string) (domain.HttpErrorCode, error) {
+	status enums.UserStatus, userRoleIDs []string, createdBy string) (domain.HttpErrorCode, error) {
 	user, err := domain.NewUser(firstName, lastName, email, phone, profileImageUrl, description, status, "", createdBy)
 	if err != nil {
 		return "", fmt.Errorf("validation for user failed: %w", err)
