@@ -10,22 +10,23 @@ import (
 type ZitadelClient struct {
 	Client    *management.Client
 	ProjectID string
+	Logger    *zerolog.Logger
 }
 
 func NewZitadelClient(config Config, logger *zerolog.Logger) *ZitadelClient {
+	jwt := []byte(config.JWTToken)
 	client, err := management.NewClient(config.Scopes,
 		zitadel.WithCustomURL(config.Issuer, config.URL),
 		zitadel.WithJWTProfileTokenSource(
-			middleware.JWTProfileFromFileData(config.JWTToken),
+			middleware.JWTProfileFromFileData(jwt),
 		))
 	if err != nil {
 		logger.Fatal().AnErr("could not create client", err)
 	}
-	defer func() {
-		err := client.Connection.Close()
-		if err != nil {
-			logger.Error().Msgf("could not close grpc connection: %s", err.Error())
-		}
-	}()
-	return &ZitadelClient{Client: client, ProjectID: config.ProjectID}
+	logger.Info().Msgf("connection to zitadel successful")
+	return &ZitadelClient{
+		Client:    client,
+		ProjectID: config.ProjectID,
+		Logger:    logger,
+	}
 }

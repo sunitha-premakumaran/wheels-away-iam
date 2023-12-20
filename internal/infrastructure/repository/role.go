@@ -41,6 +41,26 @@ func (r *RoleRepository) getRolesByIDs(ctx context.Context, roleIDs []string) ([
 	return rr, nil
 }
 
+func (r *RoleRepository) GetRoles(ctx context.Context) ([]*domain.Role, error) {
+	return r.getRoles(ctx)
+}
+
+func (r *RoleRepository) getRoles(ctx context.Context) ([]*domain.Role, error) {
+	var roles []*tables.Role
+	result := r.gormDB.Model(&tables.Role{}).Find(&roles)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	rr := make([]*domain.Role, 0, len(roles))
+	for _, r := range roles {
+		rr = append(rr, r.ToRoleDomain())
+	}
+	return rr, nil
+}
+
 func (r *RoleRepository) SaveRole(ctx context.Context, role *domain.Role) error {
 	roleToUpsert := mapRoleDomainToTable(role)
 	return r.saveRole(ctx, roleToUpsert)

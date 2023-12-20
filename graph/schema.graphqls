@@ -3,7 +3,7 @@ enum UserStatus {
   IN_ACTIVE
 }
 
-enum UserScopes {
+enum UserPermision {
   USER_READ
   USER_WRITE
   ROLE_READ
@@ -35,8 +35,8 @@ input PageInput {
 
 input RoleInput {
   name: String!
-  description: String!
-  scopes: [UserScopes]!
+  description: String
+  permissions: [UserPermision!]!
 }
 
 type User {
@@ -61,10 +61,10 @@ type UpsertResponse {
 }
 
 type Role {
-  roleName: String!
-  roleDescription: String!
+  name: String!
+  description: String
   rolePK: String!
-  scopes: [String!]!
+  permissions: [UserPermision!]!
 }
 
 type PageInfo {

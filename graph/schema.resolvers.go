@@ -14,12 +14,12 @@ import (
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, user *model.UserInput) (*model.UpsertResponse, error) {
-	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+	return r.Resolver.UserProcessor.CreateUser(ctx, user)
 }
 
 // CreateRole is the resolver for the createRole field.
 func (r *mutationResolver) CreateRole(ctx context.Context, role *model.RoleInput) (*model.UpsertResponse, error) {
-	panic(fmt.Errorf("not implemented: CreateRole - createRole"))
+	return r.Resolver.RoleProcessor.CreateRole(ctx, role)
 }
 
 // ModifyUser is the resolver for the modifyUser field.
@@ -39,7 +39,7 @@ func (r *mutationResolver) OnUserLogin(ctx context.Context, user *model.UserInpu
 
 // GetRoles is the resolver for the getRoles field.
 func (r *queryResolver) GetRoles(ctx context.Context) ([]*model.Role, error) {
-	panic(fmt.Errorf("not implemented: GetRoles - getRoles"))
+	return r.RoleProcessor.GetRoles(ctx)
 }
 
 // GetUsers is the resolver for the getUsers field.

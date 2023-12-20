@@ -15,6 +15,12 @@ type UserProcessor interface {
 	GetUsers(ctx context.Context, pageInput model.PageInput, searchInput *model.UserSearchInput) (*model.UserResponse, error)
 }
 
+type RoleProcessor interface {
+	GetRoles(ctx context.Context) ([]*model.Role, error)
+	CreateRole(ctx context.Context, role *model.RoleInput) (*model.UpsertResponse, error)
+}
+
 type Resolver struct {
 	UserProcessor UserProcessor
+	RoleProcessor RoleProcessor
 }

@@ -26,16 +26,16 @@ type PageInput struct {
 }
 
 type Role struct {
-	RoleName        string   `json:"roleName"`
-	RoleDescription string   `json:"roleDescription"`
-	RolePk          string   `json:"rolePK"`
-	Scopes          []string `json:"scopes"`
+	Name        string          `json:"name"`
+	Description *string         `json:"description,omitempty"`
+	RolePk      string          `json:"rolePK"`
+	Permissions []UserPermision `json:"permissions"`
 }
 
 type RoleInput struct {
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Scopes      []*UserScopes `json:"scopes"`
+	Name        string          `json:"name"`
+	Description *string         `json:"description,omitempty"`
+	Permissions []UserPermision `json:"permissions"`
 }
 
 type UpsertResponse struct {
@@ -72,48 +72,48 @@ type UserSearchInput struct {
 	SearchString string        `json:"searchString"`
 }
 
-type UserScopes string
+type UserPermision string
 
 const (
-	UserScopesUserRead  UserScopes = "USER_READ"
-	UserScopesUserWrite UserScopes = "USER_WRITE"
-	UserScopesRoleRead  UserScopes = "ROLE_READ"
-	UserScopesRoleWrite UserScopes = "ROLE_WRITE"
+	UserPermisionUserRead  UserPermision = "USER_READ"
+	UserPermisionUserWrite UserPermision = "USER_WRITE"
+	UserPermisionRoleRead  UserPermision = "ROLE_READ"
+	UserPermisionRoleWrite UserPermision = "ROLE_WRITE"
 )
 
-var AllUserScopes = []UserScopes{
-	UserScopesUserRead,
-	UserScopesUserWrite,
-	UserScopesRoleRead,
-	UserScopesRoleWrite,
+var AllUserPermision = []UserPermision{
+	UserPermisionUserRead,
+	UserPermisionUserWrite,
+	UserPermisionRoleRead,
+	UserPermisionRoleWrite,
 }
 
-func (e UserScopes) IsValid() bool {
+func (e UserPermision) IsValid() bool {
 	switch e {
-	case UserScopesUserRead, UserScopesUserWrite, UserScopesRoleRead, UserScopesRoleWrite:
+	case UserPermisionUserRead, UserPermisionUserWrite, UserPermisionRoleRead, UserPermisionRoleWrite:
 		return true
 	}
 	return false
 }
 
-func (e UserScopes) String() string {
+func (e UserPermision) String() string {
 	return string(e)
 }
 
-func (e *UserScopes) UnmarshalGQL(v interface{}) error {
+func (e *UserPermision) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = UserScopes(str)
+	*e = UserPermision(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid UserScopes", str)
+		return fmt.Errorf("%s is not a valid UserPermision", str)
 	}
 	return nil
 }
 
-func (e UserScopes) MarshalGQL(w io.Writer) {
+func (e UserPermision) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

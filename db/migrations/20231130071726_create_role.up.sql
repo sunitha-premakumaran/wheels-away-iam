@@ -3,6 +3,7 @@ CREATE TABLE roles(
 	name VARCHAR(250) NOT NULL,
 	description VARCHAR(250),
 	scopes  TEXT[],
+    auth_key VARCHAR(150) UNIQUE NOT NULL,
     created_by uuid NOT NULL,
     created_at timestamp NOT NULL,
     last_updated_at timestamp,

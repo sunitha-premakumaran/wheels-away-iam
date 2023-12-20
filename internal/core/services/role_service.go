@@ -23,3 +23,7 @@ func (i *RoleInteractor) SaveRole(ctx context.Context, role *domain.Role) error 
 func (i *RoleInteractor) GetRolesByIDs(ctx context.Context, roleIDs []string) ([]*domain.Role, error) {
 	return i.roleRepo.GetRolesByIDs(ctx, roleIDs)
 }
+
+func (i *RoleInteractor) GetRoles(ctx context.Context) ([]*domain.Role, error) {
+	return i.roleRepo.GetRoles(ctx)
+}

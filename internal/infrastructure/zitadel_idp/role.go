@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rs/zerolog"
 	"github.com/sunitha/wheels-away-iam/internal/core/domain"
 	"github.com/sunitha/wheels-away-iam/pkg/zitadel"
 	"github.com/zitadel/zitadel-go/pkg/client/zitadel/management"
@@ -13,21 +12,19 @@ import (
 
 type ZitadelRoleInteractor struct {
 	*zitadel.ZitadelClient
-	logger *zerolog.Logger
 }
 
-func NewZitadelRoleInteractor(client *zitadel.ZitadelClient, logger *zerolog.Logger) *ZitadelRoleInteractor {
+func NewZitadelRoleInteractor(client *zitadel.ZitadelClient) *ZitadelRoleInteractor {
 	return &ZitadelRoleInteractor{
 		ZitadelClient: client,
-		logger:        logger,
 	}
 }
 
-func (c *ZitadelUserInteractor) SaveIDPRole(ctx context.Context, role *domain.Role) (string, error) {
+func (c *ZitadelRoleInteractor) SaveIDPRole(ctx context.Context, role *domain.Role) (string, error) {
 	roleZ := mapDomainRoleToZitadel(c.ProjectID, role)
 	_, err := c.Client.AddProjectRole(ctx, roleZ)
 	if err != nil {
-		c.logger.Error().Msgf("error while creating role in zitadel: %s", err.Error())
+		c.Logger.Error().Msgf("error while creating role in zitadel: %s", err.Error())
 		return "", fmt.Errorf("error while creating role in zitadel: %w", err)
 	}
 	return roleZ.RoleKey, nil

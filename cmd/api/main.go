@@ -45,16 +45,20 @@ func main() {
 	roleUserMapRepo := repository.NewRoleUserMappingRepository(gc.DB)
 	roleUserMapInteractor := services.NewRoleUserMappingInteractor(roleUserMapRepo)
 
-	userIDPInteractor := zitadel_idp.NewZitadelUserInteractor(zClient, logger)
+	userIDPInteractor := zitadel_idp.NewZitadelUserInteractor(zClient)
+	roleIDPInteractor := zitadel_idp.NewZitadelRoleInteractor(zClient)
 
 	userRepo := repository.NewUserRepository(gc.DB)
 	userInteractor := services.NewUserInteractor(userRepo)
 	userProcessor := api.NewUserProcessor(userInteractor, userIDPInteractor, roleUserMapInteractor, roleInteractor)
 
+	roleProcessor := api.NewCreateRoleProcessor(roleInteractor, roleIDPInteractor)
+
 	mux := http.NewServeMux()
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
 		UserProcessor: userProcessor,
+		RoleProcessor: roleProcessor,
 	}}))
 
 	mux.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
@@ -80,10 +84,10 @@ func main() {
 		}
 	}()
 
-	gracefulShutdown(server, logger)
+	gracefulShutdown(server, logger, zClient)
 }
 
-func gracefulShutdown(server *http.Server, logger *zerolog.Logger) {
+func gracefulShutdown(server *http.Server, logger *zerolog.Logger, zitadelClient *zitadel.ZitadelClient) {
 	// the duration for which the server gracefully wait for existing connections to finish
 	var wait = time.Second * 15
 
@@ -99,7 +103,12 @@ func gracefulShutdown(server *http.Server, logger *zerolog.Logger) {
 	defer os.Exit(0)
 	defer logger.Print("shutting down api")
 	defer cancel()
-
+	defer func() {
+		err := zitadelClient.Client.Connection.Close()
+		if err != nil {
+			logger.Error().Msgf("could not close grpc connection: %s", err.Error())
+		}
+	}()
 	// Doesn't block if no connections, but will otherwise wait
 	// until the timeout deadline.
 

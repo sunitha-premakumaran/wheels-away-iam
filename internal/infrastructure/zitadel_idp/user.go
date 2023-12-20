@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rs/zerolog"
 	"github.com/sunitha/wheels-away-iam/internal/core/domain"
 	"github.com/sunitha/wheels-away-iam/pkg/zitadel"
 	"github.com/zitadel/zitadel-go/pkg/client/zitadel/management"
@@ -12,13 +11,11 @@ import (
 
 type ZitadelUserInteractor struct {
 	*zitadel.ZitadelClient
-	logger *zerolog.Logger
 }
 
-func NewZitadelUserInteractor(client *zitadel.ZitadelClient, logger *zerolog.Logger) *ZitadelUserInteractor {
+func NewZitadelUserInteractor(client *zitadel.ZitadelClient) *ZitadelUserInteractor {
 	return &ZitadelUserInteractor{
 		ZitadelClient: client,
-		logger:        logger,
 	}
 }
 
@@ -26,7 +23,7 @@ func (c *ZitadelUserInteractor) CreateIDPUser(ctx context.Context, user *domain.
 	userZ := mapDomainUserToZitadel(user)
 	response, err := c.Client.ImportHumanUser(ctx, userZ)
 	if err != nil {
-		c.logger.Error().Msgf("error while creating user in zitadel: %s", err.Error())
+		c.Logger.Error().Msgf("error while creating user in zitadel: %s", err.Error())
 		return "", fmt.Errorf("error while creating user in zitadel: %w", err)
 	}
 	return response.UserId, nil
@@ -36,7 +33,7 @@ func (c *ZitadelUserInteractor) CreateUserGrant(ctx context.Context, userID stri
 	grantZ := mapToUserGrant(c.ProjectID, userID, roles)
 	_, err := c.Client.AddUserGrant(ctx, grantZ)
 	if err != nil {
-		c.logger.Error().Msgf("error while creating user in zitadel: %s", err.Error())
+		c.Logger.Error().Msgf("error while creating user in zitadel: %s", err.Error())
 		return fmt.Errorf("error while creating user in zitadel: %w", err)
 	}
 	return nil
