@@ -37,13 +37,14 @@ func NewUserProcessor(userInteractor UserInteractor, userIDPInteractor UserIDPIn
 
 func (p *UserProcessor) CreateUser(ctx context.Context, user *model.UserInput) (*model.UpsertResponse, error) {
 	uFactory := factory.NewCreateUserFactory(p.userInteractor, p.userIDPInteractor, p.roleInteractor, p.roleUserMappingInteractor)
-	de, err := uFactory.Create(ctx, user.FirstName, user.LastName, user.Email, user.Phone, nil, nil, enums.INACTIVE, user.UserRoles, domain.SystemUUID)
+	de, err := uFactory.Create(ctx, user.FirstName, user.LastName, user.Email, user.Phone,
+		user.Password, nil, nil, enums.INACTIVE, user.UserRoles, domain.SystemUUID)
 	if err != nil {
 		return &model.UpsertResponse{
 			Success: false,
 			ErrorMessage: &model.ErrorMessage{
 				Code: string(de),
-				Msg:  "",
+				Msg:  err.Error(),
 			},
 		}, nil
 	}
@@ -82,12 +83,14 @@ func (p *UserProcessor) mapDecoratedUsersToModel(du []*domain.DecoratedUser) []*
 			roles = append(roles, &r.Name)
 		}
 		mu = append(mu, &model.User{
-			FirstName: u.User.FirstName,
-			LastName:  u.User.LastName,
-			Email:     u.User.Email,
-			Phone:     u.User.Phone,
-			Status:    statusToModel(u.User.Status),
-			UserRoles: roles,
+			FirstName:  u.User.FirstName,
+			LastName:   u.User.LastName,
+			Email:      u.User.Email,
+			Phone:      u.User.Phone,
+			UserID:     u.User.UUID,
+			AuthUserID: u.User.AuthID,
+			Status:     statusToModel(u.User.Status),
+			UserRoles:  roles,
 		})
 	}
 	return mu

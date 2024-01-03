@@ -484,6 +484,7 @@ input UserInput {
   lastName: String!
   email: String!
   phone: String!
+  password: String!
   userRoles: [String!]!
 }
 
@@ -4133,7 +4134,7 @@ func (ec *executionContext) unmarshalInputUserInput(ctx context.Context, obj int
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"firstName", "lastName", "email", "phone", "userRoles"}
+	fieldsInOrder := [...]string{"firstName", "lastName", "email", "phone", "password", "userRoles"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4176,6 +4177,15 @@ func (ec *executionContext) unmarshalInputUserInput(ctx context.Context, obj int
 				return it, err
 			}
 			it.Phone = data
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Password = data
 		case "userRoles":
 			var err error
 

@@ -15,7 +15,7 @@ type User struct {
 	LastName      string           `validate:"required,max=150"`
 	Password      string           `validate:"required,max=150"`
 	Email         string           `validate:"required,max=250"`
-	Phone         string           `validate:"required,max=10"`
+	Phone         string           `validate:"required,max=20"`
 	ProfileImage  *string          `validate:"omitempty,ascii,max=250"`
 	Description   *string          `validate:"omitempty,ascii,max=250"`
 	Status        enums.UserStatus `validate:"required"`
@@ -29,7 +29,7 @@ type User struct {
 	DeletedBy     *string          `validate:"omitempty,ascii,max=100"`
 }
 
-func NewUser(firstName, lastName, email, phone string, profileImageUrl, description *string,
+func NewUser(firstName, lastName, email, phone, password string, profileImageUrl, description *string,
 	status enums.UserStatus, authID, createdBy string) (*User, error) {
 	u := &User{
 		UUID:         uuid.NewString(),
@@ -37,6 +37,7 @@ func NewUser(firstName, lastName, email, phone string, profileImageUrl, descript
 		LastName:     lastName,
 		Email:        email,
 		Phone:        phone,
+		Password:     password,
 		ProfileImage: profileImageUrl,
 		Description:  description,
 		Status:       status,

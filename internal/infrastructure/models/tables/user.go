@@ -12,7 +12,7 @@ type User struct {
 	FirstName     string     `gorm:"column:first_name"`
 	LastName      string     `gorm:"column:last_name"`
 	Email         string     `gorm:"column:email"`
-	Phone         string     `gorm:"column:phone"`
+	Phone         string     `gorm:"column:primary_phone"`
 	ProfileImage  *string    `gorm:"column:profile_img"`
 	Description   *string    `gorm:"column:description"`
 	Status        string     `gorm:"column:status"`

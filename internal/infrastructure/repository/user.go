@@ -39,7 +39,7 @@ func (r *UserRepository) GetUsers(ctx context.Context, page, size int,
 func (r *UserRepository) getUsers(page, size int, searchKey *domain.UserSearhKey,
 	searchString *string) ([]*domain.DecoratedUser, error) {
 	var users []*queries.UserWithRolesRow
-	builder := builders.NewUsersWithRolesBuilder(page, size, searchKey, searchString)
+	builder := builders.NewUsersWithRolesBuilder(size, page, searchKey, searchString)
 	rawSQL, _ := builder.Build()
 	result := r.gormDB.Raw(rawSQL).Find(&users)
 	if result.Error != nil {
@@ -48,7 +48,7 @@ func (r *UserRepository) getUsers(page, size int, searchKey *domain.UserSearhKey
 		}
 		return nil, result.Error
 	}
-	var mu map[string]*domain.DecoratedUser
+	mu := make(map[string]*domain.DecoratedUser)
 	for _, u := range users {
 		if us, ok := mu[u.UUID]; ok {
 			us.UserRoles = append(us.UserRoles, u.ToRoleDomain())

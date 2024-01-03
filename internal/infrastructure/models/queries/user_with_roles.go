@@ -13,7 +13,7 @@ type UserWithRolesRow struct {
 	FirstName       string         `gorm:"column:first_name"`
 	LastName        string         `gorm:"column:last_name"`
 	Email           string         `gorm:"column:email"`
-	Phone           string         `gorm:"column:phone"`
+	Phone           string         `gorm:"column:primary_phone"`
 	ProfileImage    *string        `gorm:"column:profile_img"`
 	Description     *string        `gorm:"column:description"`
 	Status          string         `gorm:"column:status"`
@@ -27,7 +27,7 @@ type UserWithRolesRow struct {
 	RoleUUID        string         `gorm:"column:role_pk;primaryKey"`
 	RoleDescription *string        `gorm:"column:role_description"`
 	RoleName        string         `gorm:"column:role_name"`
-	RoleScopes      pq.StringArray `gorm:"column:role_scopes"`
+	RoleScopes      pq.StringArray `gorm:"column:role_scopes;type:text[]"`
 }
 
 func (UserWithRolesRow) TableName() string {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/lib/pq"
 	"github.com/sunitha/wheels-away-iam/internal/core/domain"
 	"github.com/sunitha/wheels-away-iam/internal/infrastructure/models/tables"
 	"gorm.io/gorm"
@@ -27,7 +26,7 @@ func (r *RoleRepository) GetRolesByIDs(ctx context.Context, roleIDs []string) ([
 
 func (r *RoleRepository) getRolesByIDs(ctx context.Context, roleIDs []string) ([]*domain.Role, error) {
 	var roles []*tables.Role
-	result := r.gormDB.Model(&tables.Role{}).Where("role_pk IN (?)", pq.StringArray(roleIDs)).Find(&roles)
+	result := r.gormDB.Model(&tables.Role{}).Where("role_pk IN (?)", roleIDs).Find(&roles)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil

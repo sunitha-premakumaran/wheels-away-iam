@@ -15,6 +15,7 @@ input UserInput {
   lastName: String!
   email: String!
   phone: String!
+  password: String!
   userRoles: [String!]!
 }
 

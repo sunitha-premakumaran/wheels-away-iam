@@ -7,7 +7,7 @@ import (
 )
 
 type RoleUserMapping struct {
-	UUID      string     `gorm:"column:role_user_map_pk;primaryKey"`
+	UUID      string     `gorm:"column:role_user_mapping_pk;primaryKey"`
 	RoleID    string     `gorm:"column:role_id"`
 	UserID    string     `gorm:"column:user_id"`
 	CreatedBy string     `gorm:"column:created_by"`
