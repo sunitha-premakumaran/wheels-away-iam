@@ -11,20 +11,20 @@ import (
 )
 
 type ZitadelRoleInteractor struct {
-	*zitadel.ZitadelClient
+	connection *zitadel.ZitadelClient
 }
 
 func NewZitadelRoleInteractor(client *zitadel.ZitadelClient) *ZitadelRoleInteractor {
 	return &ZitadelRoleInteractor{
-		ZitadelClient: client,
+		connection: client,
 	}
 }
 
 func (c *ZitadelRoleInteractor) SaveIDPRole(ctx context.Context, role *domain.Role) (string, error) {
-	roleZ := mapDomainRoleToZitadel(c.ProjectID, role)
-	_, err := c.Client.AddProjectRole(ctx, roleZ)
+	roleZ := mapDomainRoleToZitadel(c.connection.ProjectID, role)
+	_, err := c.connection.Client.AddProjectRole(ctx, roleZ)
 	if err != nil {
-		c.Logger.Error().Msgf("error while creating role in zitadel: %s", err.Error())
+		c.connection.Logger.Error().Msgf("error while creating role in zitadel: %s", err.Error())
 		return "", fmt.Errorf("error while creating role in zitadel: %w", err)
 	}
 	return roleZ.RoleKey, nil

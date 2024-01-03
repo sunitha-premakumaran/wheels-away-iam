@@ -46,12 +46,12 @@ func (b *UsersWithRolesBuilder) getUsersWithRoles(size, page int, searchKey *dom
 
 	p := fmt.Sprintf("OFFSET %v LIMIT %v", offset, limit)
 
-	s := fmt.Sprintf(`SELECT u.*, r.name as role_name, r.description as role_description, r.scopes as role_scopes, r.role_pk, 
-	(SELECT user_pk, first_name, last_name, email, primary_phone, alternate_phones, profile_img,
+	s := fmt.Sprintf(`SELECT u.*, r.name as role_name, r.description as role_description, r.scopes as role_scopes, r.role_pk 
+	FROM (SELECT user_pk, first_name, last_name, email, primary_phone, alternate_phones, profile_img,
 	description, status, auth_id, metadata, created_by, created_at, last_updated_at, last_updated_by,
 	deleted_at, deleted_by FROM users %s %s) u 
-	left join role_user_mapping m on m.user_id = u.user_pk
-	left join roles r on r.role_pk = m.role_id`, p, w)
+	left join role_user_mapping m on m.user_id = u.user_pk 
+	left join roles r on r.role_pk = m.role_id`, w, p)
 
 	return s, params
 }

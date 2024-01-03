@@ -12,7 +12,7 @@ type Role struct {
 	UUID          string         `gorm:"column:role_pk;primaryKey"`
 	Description   *string        `gorm:"column:description"`
 	Name          string         `gorm:"column:name"`
-	Scopes        pq.StringArray `gorm:"column:scopes"`
+	Scopes        pq.StringArray `gorm:"column:scopes;type:text[]"`
 	AuthKey       string         `gorm:"column:auth_key"`
 	CreatedBy     string         `gorm:"column:created_by"`
 	CreatedAt     time.Time      `gorm:"column:created_at"`
@@ -28,7 +28,7 @@ func (Role) TableName() string {
 
 func toEnumScopes(scopes []string) []enums.UserScope {
 	us := make([]enums.UserScope, 0, len(scopes))
-	for _, s := range us {
+	for _, s := range scopes {
 		switch s {
 		case "roles.read":
 			us = append(us, enums.ROLES_READ)

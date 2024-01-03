@@ -40,8 +40,8 @@ func (r *UserRepository) getUsers(page, size int, searchKey *domain.UserSearhKey
 	searchString *string) ([]*domain.DecoratedUser, error) {
 	var users []*queries.UserWithRolesRow
 	builder := builders.NewUsersWithRolesBuilder(page, size, searchKey, searchString)
-	rawSQL, params := builder.Build()
-	result := r.gormDB.Raw(rawSQL, params).Find(&users)
+	rawSQL, _ := builder.Build()
+	result := r.gormDB.Raw(rawSQL).Find(&users)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil

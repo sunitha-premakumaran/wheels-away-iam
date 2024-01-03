@@ -66,7 +66,7 @@ func (r *RoleRepository) SaveRole(ctx context.Context, role *domain.Role) error 
 	return r.saveRole(ctx, roleToUpsert)
 }
 
-func (r *RoleRepository) saveRole(ctx context.Context, role *tables.Role) error {
+func (r *RoleRepository) saveRole(ctx context.Context, role tables.Role) error {
 	tx := r.gormDB.WithContext(ctx)
 	result := tx.Session(&gorm.Session{FullSaveAssociations: true}).Clauses(clause.OnConflict{
 		Where: clause.Where{Exprs: []clause.Expression{
@@ -83,16 +83,15 @@ func (r *RoleRepository) saveRole(ctx context.Context, role *tables.Role) error 
 		}},
 		UpdateAll: true,
 	}).Create(&role)
-
 	return result.Error
 }
 
-func mapRoleDomainToTable(role *domain.Role) *tables.Role {
+func mapRoleDomainToTable(role *domain.Role) tables.Role {
 	scopes := []string{}
 	for _, e := range role.Scopes {
 		scopes = append(scopes, string(e))
 	}
-	return &tables.Role{
+	return tables.Role{
 		UUID:          role.UUID,
 		Name:          role.Name,
 		Description:   role.Description,

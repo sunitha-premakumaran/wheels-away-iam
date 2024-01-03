@@ -6,8 +6,8 @@ CREATE TABLE roles(
     auth_key VARCHAR(150) UNIQUE NOT NULL,
     created_by uuid NOT NULL,
     created_at timestamp NOT NULL,
-    last_updated_at timestamp,
-    last_updated_by uuid,
+    lastupdated_at timestamp,
+    lastupdated_by uuid,
     deleted_at timestamp,
     deleted_by uuid
 )
