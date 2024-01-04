@@ -43,7 +43,7 @@ func toEnumScopes(scopes []string) []enums.UserScope {
 	return us
 }
 
-func (r *Role) ToRoleDomain() *domain.Role {
+func (r *Role) ToDomain() *domain.Role {
 	return &domain.Role{
 		UUID:          r.UUID,
 		Name:          r.Name,

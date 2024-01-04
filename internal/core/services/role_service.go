@@ -24,6 +24,10 @@ func (i *RoleInteractor) GetRolesByIDs(ctx context.Context, roleIDs []string) ([
 	return i.roleRepo.GetRolesByIDs(ctx, roleIDs)
 }
 
+func (i *RoleInteractor) GetRole(ctx context.Context, roleID string) (*domain.Role, error) {
+	return i.roleRepo.GetRole(ctx, roleID)
+}
+
 func (i *RoleInteractor) GetRoles(ctx context.Context) ([]*domain.Role, error) {
 	return i.roleRepo.GetRoles(ctx)
 }

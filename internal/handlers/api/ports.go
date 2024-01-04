@@ -22,7 +22,7 @@ type (
 
 	UserIDPInteractor interface {
 		CreateIDPUser(ctx context.Context, user *domain.User) (string, error)
-		CreateUserGrant(ctx context.Context, userID string, roles []string) error
+		CreateUserGrant(ctx context.Context, userID string, roles []string) (string, error)
 	}
 
 	RoleIDPInteractor interface {

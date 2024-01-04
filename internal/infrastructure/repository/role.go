@@ -35,9 +35,25 @@ func (r *RoleRepository) getRolesByIDs(ctx context.Context, roleIDs []string) ([
 	}
 	rr := make([]*domain.Role, 0, len(roles))
 	for _, r := range roles {
-		rr = append(rr, r.ToRoleDomain())
+		rr = append(rr, r.ToDomain())
 	}
 	return rr, nil
+}
+
+func (r *RoleRepository) GetRole(ctx context.Context, roleID string) (*domain.Role, error) {
+	return r.getRole(ctx, roleID)
+}
+
+func (r *RoleRepository) getRole(ctx context.Context, roleID string) (*domain.Role, error) {
+	var role *tables.Role
+	result := r.gormDB.Model(&tables.Role{}).Where("role_pk IN (?)", roleID).First(&role)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	return role.ToDomain(), nil
 }
 
 func (r *RoleRepository) GetRoles(ctx context.Context) ([]*domain.Role, error) {
@@ -55,7 +71,7 @@ func (r *RoleRepository) getRoles(ctx context.Context) ([]*domain.Role, error) {
 	}
 	rr := make([]*domain.Role, 0, len(roles))
 	for _, r := range roles {
-		rr = append(rr, r.ToRoleDomain())
+		rr = append(rr, r.ToDomain())
 	}
 	return rr, nil
 }

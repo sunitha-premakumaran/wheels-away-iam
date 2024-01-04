@@ -66,6 +66,37 @@ func (r *UserRepository) getUsers(page, size int, searchKey *domain.UserSearhKey
 	return du, nil
 }
 
+func (r *UserRepository) GetUser(ctx context.Context, userID string) (*domain.DecoratedUser, error) {
+	users, err := r.getUser(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting user: %w", err)
+	}
+	return users, nil
+}
+
+func (r *UserRepository) getUser(userID string) (*domain.DecoratedUser, error) {
+	var users []*queries.UserWithRolesRow
+	builder := builders.NewFindUserWithRolesBuilder(userID)
+	rawSQL := builder.Build()
+	result := r.gormDB.Raw(rawSQL).Find(&users)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+	var us *domain.DecoratedUser
+	for _, u := range users {
+		if us != nil {
+			us = &domain.DecoratedUser{
+				User: u.ToUserDomain(),
+			}
+		}
+		us.UserRoles = append(us.UserRoles, u.ToRoleDomain())
+	}
+	return us, nil
+}
+
 func (r *UserRepository) getUsersCount(page, size int, searchKey *domain.UserSearhKey,
 	searchString *string) (*domain.PageInfo, error) {
 	var count int64

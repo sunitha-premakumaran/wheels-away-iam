@@ -21,6 +21,10 @@ func (i *UserInteractor) GetUsers(ctx context.Context, page, size int,
 	return i.userRepo.GetUsers(ctx, page, size, searchKey, searchString)
 }
 
+func (i *UserInteractor) GetUser(ctx context.Context, userID string) (*domain.DecoratedUser, error) {
+	return i.userRepo.GetUser(ctx, userID)
+}
+
 func (i *UserInteractor) SaveUser(ctx context.Context, user *domain.User) error {
 	return i.userRepo.SaveUser(ctx, user)
 }

@@ -53,15 +53,15 @@ func (f *CreateUserFactory) Create(ctx context.Context, firstName, lastName, ema
 		return domain.InternalServerError, err
 	}
 	for _, r := range userRoles {
-		roleMap, err := domain.NewRoleUserMapping(r.UUID, user.UUID, createdBy)
+		grantID, err := f.userIDPInteractor.CreateUserGrant(ctx, userID, []string{r.AuthKey})
+		if err != nil {
+			return domain.InternalServerError, err
+		}
+		roleMap, err := domain.NewRoleUserMapping(r.UUID, user.UUID, grantID, createdBy)
 		if err != nil {
 			return domain.BadRequestError, err
 		}
 		err = f.roleUserMappingInteractor.SaveRoleUserMapping(ctx, roleMap)
-		if err != nil {
-			return domain.InternalServerError, err
-		}
-		err = f.userIDPInteractor.CreateUserGrant(ctx, userID, []string{r.AuthKey})
 		if err != nil {
 			return domain.InternalServerError, err
 		}

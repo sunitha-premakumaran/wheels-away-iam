@@ -31,12 +31,13 @@ func (r *RoleUserMappingRepository) saveRoleUserMapping(ctx context.Context, rol
 
 func mapRoleUserMappingDomainToTable(roleUserMap *domain.RoleUserMapping) *tables.RoleUserMapping {
 	return &tables.RoleUserMapping{
-		UUID:      roleUserMap.UUID,
-		RoleID:    roleUserMap.RoleID,
-		UserID:    roleUserMap.UserID,
-		CreatedBy: roleUserMap.CreatedBy,
-		CreatedAt: roleUserMap.CreatedAt,
-		DeletedAt: roleUserMap.DeletedAt,
-		DeletedBy: roleUserMap.DeletedBy,
+		UUID:        roleUserMap.UUID,
+		RoleID:      roleUserMap.RoleID,
+		UserID:      roleUserMap.UserID,
+		AuthGrantID: roleUserMap.AuthGrantID,
+		CreatedBy:   roleUserMap.CreatedBy,
+		CreatedAt:   roleUserMap.CreatedAt,
+		DeletedAt:   roleUserMap.DeletedAt,
+		DeletedBy:   roleUserMap.DeletedBy,
 	}
 }

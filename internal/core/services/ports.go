@@ -12,9 +12,11 @@ type (
 		GetUsers(ctx context.Context, page, size int,
 			searchKey *domain.UserSearhKey, searchString *string) (
 			[]*domain.DecoratedUser, *domain.PageInfo, error)
+		GetUser(ctx context.Context, userID string) (*domain.DecoratedUser, error)
 	}
 
 	RoleRepository interface {
+		GetRole(ctx context.Context, roleID string) (*domain.Role, error)
 		GetRoles(ctx context.Context) ([]*domain.Role, error)
 		GetRolesByIDs(ctx context.Context, roleIDs []string) ([]*domain.Role, error)
 		SaveRole(ctx context.Context, role *domain.Role) error
