@@ -1,0 +1,114 @@
+{
+	"info": {
+		"_postman_id": "5d205300-a493-455f-9f0c-6507281c275f",
+		"name": "Whells",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "2519742"
+	},
+	"item": [
+		{
+			"name": "Create role",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation createRole($role: RoleInput) {\n    createRole(role: $role) {\n        errorMessage {\n            code\n            msg\n        }\n        success\n    }\n}",
+						"variables": "{\n    \"role\": {\n        \"name\": \"Managers\",\n        \"permissions\": [\n            \"USER_READ\",\n            \"USER_WRITE\",\n            \"ROLE_READ\",\n            \"ROLE_WRITE\"\n        ]\n    }\n}"
+					}
+				},
+				"url": {
+					"raw": "http://localhost:7000/query",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7000",
+					"path": [
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get roles",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "{\n    getRoles {\n        rolePK\n        name\n        description\n        permissions\n    }\n}",
+						"variables": ""
+					}
+				},
+				"url": {
+					"raw": "http://localhost:7000/query",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7000",
+					"path": [
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation createUser($user: UserInput) {\n    createUser(user: $user) {\n        errorMessage {\n            code\n            msg\n        }\n        success\n    }\n}",
+						"variables": "{\n    \"user\": {\n        \"firstName\": \"Sunitha\",\n  \"lastName\": \"Nair\",\n  \"email\": \"sunitha.n@gmail.com\",\n  \"phone\": \"+91 8056912146\",\n  \"password\": \"Password@123456\",\n  \"userRoles\": [\n    \"6caba0fc-2d79-4ed7-bfe6-c5be34fe0d4e\"\n  ]\n    }\n}"
+					}
+				},
+				"url": {
+					"raw": "http://localhost:7000/query",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7000",
+					"path": [
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get users",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "{\n    getUsers(pageInput: {pageNumber: 1, pageSize: 100}) {\n        pageInfo {\n            pageNumber\n            pageSize\n            totalItems\n            totalPages\n        }\n        users {\n            lastName\n            firstName\n            email\n            status\n            phone\n            userID\n            userRoles\n            authUserID\n            userRoles\n        }\n    }\n}",
+						"variables": ""
+					}
+				},
+				"url": {
+					"raw": "http://localhost:7000/query",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7000",
+					"path": [
+						"query"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
