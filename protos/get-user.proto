@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/sunitha/wheels-away-iam";
+package user;
+
+service UserProcessor {
+  rpc GetUser (UserRequest) returns (UserResponse) {}
+}
+
+message UserRequest {
+  string id = 1;
+}
+
+message UserResponse {
+  string user_id = 1;
+  string user_name = 2;
+  string user_email = 3;
+}

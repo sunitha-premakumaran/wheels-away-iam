@@ -12,6 +12,7 @@ import (
 type Config struct {
 	Env           string         `mapstructure:"ENVIRONMENT"`
 	APIPort       int            `mapstructure:"API_PORT"`
+	GRPCPort      int            `mapstructure:"GRPC_PORT"`
 	Database      gorm.Config    `mapstructure:",squash"`
 	LogLevel      string         `mapstructure:"LOG_LEVEL"`
 	LogFormat     string         `mapstructure:"LOG_FORMAT"`
